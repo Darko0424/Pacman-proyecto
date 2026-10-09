@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="Pacman/Pacman.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="PacmanAccesoDatos/PacmanAccesoDatos.csproj" />
+  <Project Path="PacmanApi/PacmanApi.csproj" />
+  <Project Path="PacmanDominio/PacmanDominio.csproj" />
+  <Project Path="PacmanLogicaNegocios/PacmanLogicaNegocios.csproj" />
+  <Project Path="PacmanUtilitarios/PacmanUtilitarios.csproj" />
+</Solution>
