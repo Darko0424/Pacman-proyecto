@@ -1,4 +1,13 @@
 <Solution>
+  <Folder Name="/Base De Datos/">
+    <File Path="Base De Datos/01_CrearBaseDatos.sql" />
+    <File Path="Base De Datos/02_Tablas.sql" />
+    <File Path="Base De Datos/03_Relaciones.sql" />
+    <File Path="Base De Datos/04_Indices.sql" />
+    <File Path="Base De Datos/05_Vistas.sql" />
+    <File Path="Base De Datos/06_DatosCatalogos.sql" />
+    <File Path="Base De Datos/07_DatosPrueba.sql" />
+  </Folder>
   <Project Path="Pacman/Pacman.esproj">
     <Build />
     <Deploy />
