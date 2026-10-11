@@ -4,3 +4,41 @@ GET {{PacmanApi_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+### Catálogos
+GET {{PacmanApi_HostAddress}}/api/Nivel/Listar
+Accept: application/json
+
+###
+GET {{PacmanApi_HostAddress}}/api/Dificultad/Listar
+Accept: application/json
+
+### Usuario: registro
+POST {{PacmanApi_HostAddress}}/api/Usuario/Registrar
+Content-Type: application/json
+
+{
+  "nombreUsuario": "jugador_prueba",
+  "correoElectronico": "jugador_prueba@example.com",
+  "contrasena": "Prueba1234"
+}
+
+### Usuario: inicio de sesión (usuario o correo)
+# @name sesion
+POST {{PacmanApi_HostAddress}}/api/Usuario/IniciarSesion
+Content-Type: application/json
+
+{
+  "usuario": "jugador_prueba",
+  "contrasena": "Prueba1234"
+}
+
+### Usuario: sesión actual
+GET {{PacmanApi_HostAddress}}/api/Usuario/Sesion
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+
+### Usuario: cerrar sesión
+POST {{PacmanApi_HostAddress}}/api/Usuario/CerrarSesion
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+
+###

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using PacmanAccesoDatos.Contexto;
 using PacmanAccesoDatos.Implementaciones;
 using PacmanDominio.DTO;
@@ -11,7 +12,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(opciones =>
+{
+    // Botón "Authorize" de Swagger: pegar el token de api/Usuario/IniciarSesion
+    opciones.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        Description = "Token devuelto por api/Usuario/IniciarSesion"
+    });
+    opciones.AddSecurityRequirement(documento => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", documento)] = []
+    });
+});
 
 builder.Services.AddDbContext<PacManDbContext>(options =>
     options.UseSqlServer(
@@ -24,6 +38,7 @@ builder.Services.AddScoped<IDificultadLN, DificultadLN>();
 builder.Services.AddScoped<IFrutaLN, FrutaLN>();
 builder.Services.AddScoped<INivelLN, NivelLN>();
 builder.Services.AddScoped<IPersonajeLN, PersonajeLN>();
+builder.Services.AddScoped<IUsuarioLN, UsuarioLN>();
 
 var app = builder.Build();
 
