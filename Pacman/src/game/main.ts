@@ -1,9 +1,9 @@
-import { Boot } from './scenes/Boot';
 import { GameOver } from './scenes/GameOver';
 import { Game as MainGame } from './scenes/Game';
 import { MainMenu } from './scenes/MainMenu';
 import { AUTO, Game } from 'phaser';
-import { Preloader } from './scenes/Preloader';
+import { EscenaCarga } from '../presentacion/escenas/EscenaCarga';
+import { EscenaGaleriaSprites } from '../presentacion/escenas/EscenaGaleriaSprites';
 
 //  Find out more information about the Game Config at:
 //  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -13,9 +13,11 @@ const config: Phaser.Types.Core.GameConfig = {
     height: 768,
     parent: 'game-container',
     backgroundColor: '#028af8',
+    // Los sprites son pixel art: sin esto se ven borrosos al escalarlos
+    pixelArt: true,
     scene: [
-        Boot,
-        Preloader,
+        EscenaCarga,
+        EscenaGaleriaSprites,
         MainMenu,
         MainGame,
         GameOver
