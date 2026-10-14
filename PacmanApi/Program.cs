@@ -39,6 +39,8 @@ builder.Services.AddScoped<IFrutaLN, FrutaLN>();
 builder.Services.AddScoped<INivelLN, NivelLN>();
 builder.Services.AddScoped<IPersonajeLN, PersonajeLN>();
 builder.Services.AddScoped<IUsuarioLN, UsuarioLN>();
+builder.Services.AddScoped<IHistorialLN, HistorialLN>();
+builder.Services.AddScoped<IRankingLN, RankingLN>();
 
 var app = builder.Build();
 

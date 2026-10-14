@@ -37,6 +37,26 @@ Content-Type: application/json
 GET {{PacmanApi_HostAddress}}/api/Usuario/Sesion
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
+### Historial: partidas del usuario de la sesión
+GET {{PacmanApi_HostAddress}}/api/Historial/Listar
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+
+### Historial: progreso general
+GET {{PacmanApi_HostAddress}}/api/Historial/Progreso
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+
+### Ranking por rol (PACMAN o FANTASMA)
+GET {{PacmanApi_HostAddress}}/api/Ranking/Listar/PACMAN
+Accept: application/json
+
+###
+GET {{PacmanApi_HostAddress}}/api/Ranking/Listar/FANTASMA
+Accept: application/json
+
+### Ranking: posición del usuario de la sesión
+GET {{PacmanApi_HostAddress}}/api/Ranking/MiPosicion/PACMAN
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+
 ### Usuario: cerrar sesión
 POST {{PacmanApi_HostAddress}}/api/Usuario/CerrarSesion
 Authorization: Bearer {{sesion.response.body.$.data.token}}

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PacmanApi.Extensiones;
 using PacmanDominio.Clases;
 using PacmanDominio.InterfazLN;
 
@@ -8,8 +9,6 @@ namespace PacmanApi.Controllers;
 [ApiController]
 public class UsuarioController : ControllerBase
 {
-    private const string PrefijoToken = "Bearer ";
-
     private readonly IUsuarioLN _usuarioLN;
 
     public UsuarioController(IUsuarioLN usuarioLN)
@@ -43,7 +42,7 @@ public class UsuarioController : ControllerBase
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Sesion()
     {
-        var resultado = await _usuarioLN.ValidarSesionAsync(ObtenerToken());
+        var resultado = await _usuarioLN.ValidarSesionAsync(Request.ObtenerToken());
 
         if (!resultado.Success)
             return Unauthorized(resultado);
@@ -54,20 +53,11 @@ public class UsuarioController : ControllerBase
     [HttpPost("CerrarSesion")]
     public async Task<IActionResult> CerrarSesion()
     {
-        var resultado = await _usuarioLN.CerrarSesionAsync(ObtenerToken());
+        var resultado = await _usuarioLN.CerrarSesionAsync(Request.ObtenerToken());
 
         if (!resultado.Success)
             return BadRequest(resultado);
 
         return Ok(resultado);
-    }
-
-    private string ObtenerToken()
-    {
-        var encabezado = Request.Headers.Authorization.ToString();
-
-        return encabezado.StartsWith(PrefijoToken, StringComparison.OrdinalIgnoreCase)
-            ? encabezado[PrefijoToken.Length..].Trim()
-            : string.Empty;
     }
 }
