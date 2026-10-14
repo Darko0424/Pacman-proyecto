@@ -193,6 +193,7 @@ namespace PacmanAccesoDatos.Implementaciones
             catch
             {
                 _transaction.Rollback();
+                _Contexto.ChangeTracker.Clear();
                 throw;
             }
             finally
@@ -213,6 +214,8 @@ namespace PacmanAccesoDatos.Implementaciones
             }
             finally
             {
+                // Lo deshecho en la BD no debe quedar pendiente en el contexto
+                _Contexto.ChangeTracker.Clear();
                 _transaction.Dispose();
                 _transaction = null;
             }

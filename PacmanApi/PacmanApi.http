@@ -57,6 +57,14 @@ Accept: application/json
 GET {{PacmanApi_HostAddress}}/api/Ranking/MiPosicion/PACMAN
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
+### Partida: datos y participantes (las guarda el motor, no hay POST)
+GET {{PacmanApi_HostAddress}}/api/Partida/Obtener/1
+Accept: application/json
+
+###
+GET {{PacmanApi_HostAddress}}/api/Partida/Participantes/1
+Accept: application/json
+
 ### Usuario: cerrar sesión
 POST {{PacmanApi_HostAddress}}/api/Usuario/CerrarSesion
 Authorization: Bearer {{sesion.response.body.$.data.token}}
