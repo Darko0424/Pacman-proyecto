@@ -9,7 +9,7 @@ public partial class ProgresoJugador
 
     public string NombreUsuario { get; set; } = null!;
 
-    public int? PartidasJugadas { get; set; }
+    public int PartidasJugadas { get; set; }
 
     public int PuntosTotales { get; set; }
 

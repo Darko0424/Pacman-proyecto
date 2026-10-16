@@ -15,5 +15,5 @@ public partial class Nivel
 
     public decimal VelocidadBase { get; set; }
 
-    public virtual ICollection<Partida> Partidas { get; set; } = new List<Partida>();
+    public virtual ICollection<Ronda> Rondas { get; set; } = new List<Ronda>();
 }

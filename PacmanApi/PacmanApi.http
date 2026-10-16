@@ -13,6 +13,10 @@ Accept: application/json
 GET {{PacmanApi_HostAddress}}/api/Dificultad/Listar
 Accept: application/json
 
+### Objetos de las cajas, por bando (PACMAN o FANTASMA)
+GET {{PacmanApi_HostAddress}}/api/Objeto/Bando/PACMAN
+Accept: application/json
+
 ### Usuario: registro
 POST {{PacmanApi_HostAddress}}/api/Usuario/Registrar
 Content-Type: application/json
@@ -41,6 +45,10 @@ Authorization: Bearer {{sesion.response.body.$.data.token}}
 GET {{PacmanApi_HostAddress}}/api/Historial/Listar
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
+### Historial: detalle por nivel de una partida
+GET {{PacmanApi_HostAddress}}/api/Historial/Rondas/1
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+
 ### Historial: progreso general
 GET {{PacmanApi_HostAddress}}/api/Historial/Progreso
 Authorization: Bearer {{sesion.response.body.$.data.token}}
@@ -53,15 +61,28 @@ Accept: application/json
 GET {{PacmanApi_HostAddress}}/api/Ranking/Listar/FANTASMA
 Accept: application/json
 
+### Ranking total (suma de ambos roles; solo multijugador)
+GET {{PacmanApi_HostAddress}}/api/Ranking/Total
+Accept: application/json
+
+###
+GET {{PacmanApi_HostAddress}}/api/Ranking/MiPosicionTotal
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+
 ### Ranking: posición del usuario de la sesión
 GET {{PacmanApi_HostAddress}}/api/Ranking/MiPosicion/PACMAN
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
-### Partida: datos y participantes (las guarda el motor, no hay POST)
+### Partida: datos, niveles y participantes (las guarda el motor, no hay POST)
 GET {{PacmanApi_HostAddress}}/api/Partida/Obtener/1
 Accept: application/json
 
 ###
+GET {{PacmanApi_HostAddress}}/api/Partida/Rondas/1
+Accept: application/json
+
+###
+# El id es de la ronda (un nivel), no de la partida
 GET {{PacmanApi_HostAddress}}/api/Partida/Participantes/1
 Accept: application/json
 

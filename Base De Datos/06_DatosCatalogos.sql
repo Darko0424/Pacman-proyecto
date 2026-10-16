@@ -28,18 +28,21 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM dificultades d WHERE d.id_dificultad = v.id_dificultad);
 GO
 
-INSERT INTO frutas (id_fruta, nombre, efecto, duracion_seg, puntos)
-SELECT v.id_fruta, v.nombre, v.efecto, v.duracion_seg, v.puntos
+-- PROVISIONALES: el equipo todavía no define los objetos de cada bando.
+-- efecto es la clave que el motor asocia con su implementación (IEfectoObjeto).
+INSERT INTO objetos (id_objeto, nombre, bando, efecto, duracion_seg)
+SELECT v.id_objeto, v.nombre, v.bando, v.efecto, v.duracion_seg
 FROM (VALUES
-    (1, 'Cereza',  'DOBLE_PUNTAJE',      10, 100),
-    (2, 'Fresa',   'VELOCIDAD',          8,  300),
-    (3, 'Naranja', 'CONGELAR_FANTASMAS', 5,  500),
-    (4, 'Manzana', 'INVISIBILIDAD',      6,  700)
-) AS v (id_fruta, nombre, efecto, duracion_seg, puntos)
-WHERE NOT EXISTS (SELECT 1 FROM frutas f WHERE f.id_fruta = v.id_fruta);
+    (1, 'Turbo',   'PACMAN',   'VELOCIDAD', 5),
+    (2, 'Escudo',  'PACMAN',   'ESCUDO',    4),
+    (3, 'Impulso', 'FANTASMA', 'VELOCIDAD', 5),
+    (4, 'Hielo',   'FANTASMA', 'CONGELAR',  3)
+) AS v (id_objeto, nombre, bando, efecto, duracion_seg)
+WHERE NOT EXISTS (SELECT 1 FROM objetos o WHERE o.id_objeto = v.id_objeto);
 GO
 
--- Cinco niveles estáticos. El contrato JSON versión 1 se documenta en README.md.
+-- Cinco niveles estáticos. El contrato JSON versión 2 se documenta en README.md.
+-- PROVISIONALES: los puntosCajas de cada mapa los define el equipo.
 -- Los mapas válidos existentes, sus nombres, velocidades e identificadores se conservan.
 SET XACT_ABORT ON;
 
@@ -56,7 +59,7 @@ BEGIN TRY
     INSERT INTO @NivelesPredeterminados (numero, nombre, laberinto_json, velocidad_base)
     VALUES
     (1, N'Laberinto clásico', N'{
-    "version": 1,
+    "version": 2,
     "filas": 31,
     "columnas": 28,
     "casillas": [
@@ -100,6 +103,12 @@ BEGIN TRY
         {"fila": 29, "columna": 6},
         {"fila": 29, "columna": 21}
     ],
+    "puntosCajas": [
+        {"fila": 5, "columna": 6},
+        {"fila": 5, "columna": 21},
+        {"fila": 21, "columna": 6},
+        {"fila": 21, "columna": 21}
+    ],
     "posicionesIniciales": [
         {"idPersonaje": 1, "fila": 25, "columna": 6},
         {"idPersonaje": 2, "fila": 25, "columna": 21},
@@ -109,7 +118,7 @@ BEGIN TRY
     ]
 }', 1.00),
     (2, N'Doble anillo', N'{
-    "version": 1,
+    "version": 2,
     "filas": 31,
     "columnas": 28,
     "casillas": [
@@ -153,6 +162,12 @@ BEGIN TRY
         {"fila": 29, "columna": 7},
         {"fila": 29, "columna": 20}
     ],
+    "puntosCajas": [
+        {"fila": 7, "columna": 5},
+        {"fila": 7, "columna": 22},
+        {"fila": 23, "columna": 5},
+        {"fila": 23, "columna": 22}
+    ],
     "posicionesIniciales": [
         {"idPersonaje": 1, "fila": 29, "columna": 5},
         {"idPersonaje": 2, "fila": 29, "columna": 22},
@@ -162,7 +177,7 @@ BEGIN TRY
     ]
 }', 1.00),
     (3, N'Cuatro patios', N'{
-    "version": 1,
+    "version": 2,
     "filas": 31,
     "columnas": 28,
     "casillas": [
@@ -206,6 +221,12 @@ BEGIN TRY
         {"fila": 29, "columna": 6},
         {"fila": 29, "columna": 21}
     ],
+    "puntosCajas": [
+        {"fila": 7, "columna": 5},
+        {"fila": 7, "columna": 22},
+        {"fila": 23, "columna": 5},
+        {"fila": 23, "columna": 22}
+    ],
     "posicionesIniciales": [
         {"idPersonaje": 1, "fila": 29, "columna": 6},
         {"idPersonaje": 2, "fila": 29, "columna": 21},
@@ -215,7 +236,7 @@ BEGIN TRY
     ]
 }', 1.00),
     (4, N'Pasajes alternos', N'{
-    "version": 1,
+    "version": 2,
     "filas": 31,
     "columnas": 28,
     "casillas": [
@@ -259,6 +280,12 @@ BEGIN TRY
         {"fila": 29, "columna": 6},
         {"fila": 29, "columna": 21}
     ],
+    "puntosCajas": [
+        {"fila": 9, "columna": 5},
+        {"fila": 5, "columna": 21},
+        {"fila": 25, "columna": 6},
+        {"fila": 21, "columna": 21}
+    ],
     "posicionesIniciales": [
         {"idPersonaje": 1, "fila": 29, "columna": 6},
         {"idPersonaje": 2, "fila": 29, "columna": 21},
@@ -268,7 +295,7 @@ BEGIN TRY
     ]
 }', 1.00),
     (5, N'Encrucijada', N'{
-    "version": 1,
+    "version": 2,
     "filas": 31,
     "columnas": 28,
     "casillas": [
@@ -311,6 +338,12 @@ BEGIN TRY
         {"fila": 17, "columna": 26},
         {"fila": 29, "columna": 6},
         {"fila": 29, "columna": 21}
+    ],
+    "puntosCajas": [
+        {"fila": 7, "columna": 5},
+        {"fila": 7, "columna": 22},
+        {"fila": 23, "columna": 5},
+        {"fila": 23, "columna": 22}
     ],
     "posicionesIniciales": [
         {"idPersonaje": 1, "fila": 29, "columna": 6},

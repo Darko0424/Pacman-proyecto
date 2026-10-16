@@ -29,6 +29,20 @@ public class PartidaController : ControllerBase
         return Ok(resultado);
     }
 
+    // Niveles jugados de la partida
+    [HttpGet("Rondas/{id:int}")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Rondas(int id)
+    {
+        var resultado = await _partidaLN.ListarRondasAsync(id);
+
+        if (!resultado.Success)
+            return NotFound(resultado);
+
+        return Ok(resultado);
+    }
+
+    // id = id de la ronda (un nivel), no de la partida
     [HttpGet("Participantes/{id:int}")]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Participantes(int id)

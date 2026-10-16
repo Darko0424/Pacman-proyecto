@@ -1,11 +1,10 @@
+// Una partida es la serie de niveles jugada en una sala
 export interface TPartida {
     idPartida: number;
-    codigoSala: string | null;
-    modo: string;
+    codigoSala: string;
+    modo: 'MULTIJUGADOR' | 'CONTRA_IA';
     idDificultad: number;
-    idNivelAlcanzado: number;
-    estado: string;
-    bandoGanador: string | null;
+    estado: 'EN_CURSO' | 'FINALIZADA' | 'ABANDONADA';
     fechaInicio?: string | Date;
     fechaFin?: string | Date | null;
 }

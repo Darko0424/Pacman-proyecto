@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 namespace PacmanDominio.Entidades;
 
-public partial class ParticipantePartida
+public partial class ParticipanteRonda
 {
     public int IdParticipante { get; set; }
 
-    public int IdPartida { get; set; }
+    public int IdRonda { get; set; }
 
     public int? IdUsuario { get; set; }
 
@@ -21,11 +21,11 @@ public partial class ParticipantePartida
 
     public int PacmansAtrapados { get; set; }
 
-    public int FrutasComidas { get; set; }
+    public int ObjetosUsados { get; set; }
 
     public bool Abandono { get; set; }
 
-    public virtual Partida IdPartidaNavigation { get; set; } = null!;
+    public virtual Ronda IdRondaNavigation { get; set; } = null!;
 
     public virtual Personaje IdPersonajeNavigation { get; set; } = null!;
 

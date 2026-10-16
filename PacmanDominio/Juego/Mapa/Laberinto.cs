@@ -11,6 +11,7 @@ public sealed class Laberinto
     public int Columnas { get; }
     public IReadOnlyList<Casilla> Casillas { get; }
     public IReadOnlyList<Casilla> PuntosReaparicion { get; }
+    public IReadOnlyList<Casilla> PuntosCajas { get; }
     public IReadOnlyList<Punto> Puntos { get; }
 
     public int BolasRestantes
@@ -34,12 +35,14 @@ public sealed class Laberinto
         int columnas,
         IEnumerable<Casilla> casillas,
         IEnumerable<Casilla> puntosReaparicion,
+        IEnumerable<Casilla> puntosCajas,
         IEnumerable<Punto> puntos)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(filas);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(columnas);
         ArgumentNullException.ThrowIfNull(casillas);
         ArgumentNullException.ThrowIfNull(puntosReaparicion);
+        ArgumentNullException.ThrowIfNull(puntosCajas);
         ArgumentNullException.ThrowIfNull(puntos);
 
         Filas = filas;
@@ -48,6 +51,7 @@ public sealed class Laberinto
         RegistrarCasillas(casillas);
         Casillas = _casillas.Values.ToList().AsReadOnly();
         PuntosReaparicion = ValidarPuntosReaparicion(puntosReaparicion);
+        PuntosCajas = ValidarPuntosCajas(puntosCajas);
 
         RegistrarPuntos(puntos);
         Puntos = _puntos.Values.ToList().AsReadOnly();
@@ -75,14 +79,22 @@ public sealed class Laberinto
             casilla => casilla.Fila == fila && casilla.Columna == columna);
     }
 
-    internal bool ConsumirPunto(Casilla posicion)
+    public bool EsPuntoCaja(int fila, int columna)
     {
-        if (!_puntos.TryGetValue((posicion.Fila, posicion.Columna), out var punto))
+        return PuntosCajas.Any(
+            casilla => casilla.Fila == fila && casilla.Columna == columna);
+    }
+
+    // Devuelve la bola consumida (normal o de poder), o null si no había una disponible
+    internal Punto? ConsumirPunto(Casilla posicion)
+    {
+        if (!_puntos.TryGetValue((posicion.Fila, posicion.Columna), out var punto) ||
+            !punto.Consumir())
         {
-            return false;
+            return null;
         }
 
-        return punto.Consumir();
+        return punto;
     }
 
     private void RegistrarCasillas(IEnumerable<Casilla> casillas)
@@ -141,6 +153,37 @@ public sealed class Laberinto
             throw new ArgumentException(
                 "El laberinto debe tener exactamente seis puntos de reaparición.",
                 nameof(puntosReaparicion));
+        }
+
+        return posiciones.AsReadOnly();
+    }
+
+    private IReadOnlyList<Casilla> ValidarPuntosCajas(IEnumerable<Casilla> puntosCajas)
+    {
+        var posiciones = new List<Casilla>();
+        var coordenadas = new HashSet<(int Fila, int Columna)>();
+
+        foreach (var puntoCaja in puntosCajas)
+        {
+            ArgumentNullException.ThrowIfNull(puntoCaja);
+
+            var casilla = ObtenerCasillaTransitable(puntoCaja);
+
+            if (!coordenadas.Add((casilla.Fila, casilla.Columna)))
+            {
+                throw new ArgumentException(
+                    "Los puntos de cajas deben ser distintos.",
+                    nameof(puntosCajas));
+            }
+
+            posiciones.Add(casilla);
+        }
+
+        if (posiciones.Count == 0)
+        {
+            throw new ArgumentException(
+                "El laberinto debe tener al menos un punto de cajas.",
+                nameof(puntosCajas));
         }
 
         return posiciones.AsReadOnly();

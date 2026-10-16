@@ -21,18 +21,20 @@ túneles ni teletransporte; todas las bolas se alcanzan con movimientos cardinal
 Los niveles nuevos tienen `velocidad_base = 1.00`; el número no define una curva de
 dificultad ni modifica las velocidades ya guardadas.
 
-### Contrato JSON, versión 1
+### Contrato JSON, versión 2
 
 Las propiedades son obligatorias y distinguen mayúsculas de minúsculas. No se
 permiten propiedades desconocidas o repetidas, comentarios ni comas finales.
 El SQL contiene los cinco documentos completos, con una fila de texto por línea.
+La versión 2 agrega `puntosCajas`; los documentos de la versión 1 se rechazan.
 
 | Propiedad | Contenido |
 | --- | --- |
-| `version` | Entero `1`. Otras versiones se rechazan. |
+| `version` | Entero `2`. Otras versiones se rechazan. |
 | `filas`, `columnas` | Enteros positivos que deben coincidir exactamente con la matriz. |
 | `casillas` | Arreglo de cadenas; cada cadena representa una fila completa, incluidos los muros. |
 | `puntosReaparicion` | Seis objetos distintos con `fila` y `columna`, enteros desde cero. |
+| `puntosCajas` | Al menos un objeto con `fila` y `columna`, sin repetir: donde aparecen las cajas de objetos. **Provisionales** (4 por mapa) hasta que el equipo los defina. |
 | `posicionesIniciales` | Cinco objetos con `idPersonaje`, `fila` y `columna`; debe aparecer una vez cada personaje 1–5, sin compartir casilla. |
 
 Leyenda de `casillas`:
@@ -44,8 +46,9 @@ Leyenda de `casillas`:
 
 La matriz ya expresa las posiciones de las bolas; no se repiten en otro arreglo.
 Las coordenadas de apariciones y reapariciones deben referirse a suelo transitable.
-Los personajes 1 y 2 son Pac-Man; 3, 4 y 5 son fantasmas. La sala decide cuál de
-estos tres fantasmas controla el bot, sin cambiar las posiciones del mapa.
+Los personajes 1 y 2 son Pac-Man; 3, 4 y 5 son fantasmas. El sorteo de roles decide
+qué personajes controla la IA, sin cambiar las posiciones del mapa. Contra la IA
+solo se usa el Pac-Man 1.
 
 El convertidor rechaza geometría desconectada, ausencia de bolas normales o de
 poder, coordenadas inválidas y el formato anterior con `casillas: []`. Las bolas de
@@ -103,9 +106,10 @@ pero todavía no carga estos niveles ni conecta los mapas con una partida.
 ### Aplicación del SQL
 
 Para una base nueva, ejecutar los scripts de `Base De Datos` en orden; el script 06
-inserta los cinco niveles. En una base que ya tiene las tablas, volver a ejecutar
-`06_DatosCatalogos.sql` en la instancia y base de destino elegidas por el equipo.
-Comprobar primero su `USE PacmanDB`; la carga desde C# no ejecuta este script.
+inserta los cinco niveles. Los scripts no modifican tablas que ya existen: si la
+estructura cambió (como al pasar de frutas a objetos y rondas), ejecutar antes
+`00_BorrarBaseDatos.sql`, que borra la base completa, y luego del 01 al 07.
+Comprobar primero su `USE PacmanDB`; la carga desde C# no ejecuta estos scripts.
 
 El parche de niveles se ejecuta en una transacción y se puede repetir:
 

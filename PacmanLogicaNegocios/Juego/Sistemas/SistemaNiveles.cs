@@ -9,7 +9,8 @@ namespace PacmanLogicaNegocios.Juego.Sistemas;
 
 public sealed class SistemaNiveles
 {
-    public const int VersionSoportada = 1;
+    // Versión 2: agrega puntosCajas (dónde aparecen las cajas de objetos)
+    public const int VersionSoportada = 2;
 
     public NivelCargado Cargar(TNivel nivel)
     {
@@ -37,14 +38,14 @@ public sealed class SistemaNiveles
 
         ValidarPropiedades(
             raiz, "laberinto", "version", "filas", "columnas", "casillas",
-            "puntosReaparicion", "posicionesIniciales");
+            "puntosReaparicion", "puntosCajas", "posicionesIniciales");
 
         int version = LeerEntero(raiz, "version", "laberinto");
 
         if (version != VersionSoportada)
         {
             throw new FormatException(
-                $"La versión {version} del laberinto no está soportada; se requiere la versión 1.");
+                $"La versión {version} del laberinto no está soportada; se requiere la versión {VersionSoportada}.");
         }
 
         int filas = LeerEntero(raiz, "filas", "laberinto");
@@ -62,8 +63,10 @@ public sealed class SistemaNiveles
         ConstruirCasillas(matriz, casillas, puntos);
 
         var puntosReaparicion = LeerPuntosReaparicion(raiz, casillas, filas, columnas);
+        var puntosCajas = LeerPuntosCajas(raiz, casillas, filas, columnas);
         var posicionesIniciales = LeerPosicionesIniciales(raiz, casillas, filas, columnas);
-        var laberinto = new Laberinto(filas, columnas, casillas, puntosReaparicion, puntos);
+        var laberinto = new Laberinto(
+            filas, columnas, casillas, puntosReaparicion, puntosCajas, puntos);
 
         ValidarConectividad(laberinto);
 
@@ -183,6 +186,39 @@ public sealed class SistemaNiveles
             if (!coordenadas.Add((casilla.Fila, casilla.Columna)))
             {
                 throw new FormatException($"{contexto} repite una posición de reaparición.");
+            }
+
+            posiciones.Add(casilla);
+        }
+
+        return posiciones;
+    }
+
+    private static List<Casilla> LeerPuntosCajas(
+        JsonElement raiz,
+        IReadOnlyList<Casilla> casillas,
+        int filas,
+        int columnas)
+    {
+        var elementos = LeerArreglo(raiz, "puntosCajas");
+
+        if (elementos.GetArrayLength() == 0)
+        {
+            throw new FormatException("puntosCajas debe contener al menos una posición.");
+        }
+
+        var posiciones = new List<Casilla>();
+        var coordenadas = new HashSet<(int Fila, int Columna)>();
+
+        foreach (var elemento in elementos.EnumerateArray())
+        {
+            string contexto = $"puntosCajas[{posiciones.Count}]";
+            ValidarPropiedades(elemento, contexto, "fila", "columna");
+            var casilla = LeerPosicion(elemento, contexto, casillas, filas, columnas);
+
+            if (!coordenadas.Add((casilla.Fila, casilla.Columna)))
+            {
+                throw new FormatException($"{contexto} repite un punto de cajas.");
             }
 
             posiciones.Add(casilla);

@@ -13,7 +13,7 @@ public partial class RankingEntrada
 
     public int? MejorPuntuacion { get; set; }
 
-    public int? PartidasEnRol { get; set; }
+    public int NivelesEnRol { get; set; }
 
     public long? Posicion { get; set; }
 }

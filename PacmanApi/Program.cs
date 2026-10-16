@@ -35,7 +35,7 @@ builder.Services.AddScoped<IUnidadTrabajoEF, UnidadTrabajoEF>();
 builder.Services.AddAutoMapper(cfg => { }, typeof(AutoMapperProfile).Assembly);
 
 builder.Services.AddScoped<IDificultadLN, DificultadLN>();
-builder.Services.AddScoped<IFrutaLN, FrutaLN>();
+builder.Services.AddScoped<IObjetoLN, ObjetoLN>();
 builder.Services.AddScoped<INivelLN, NivelLN>();
 builder.Services.AddScoped<IPersonajeLN, PersonajeLN>();
 builder.Services.AddScoped<IUsuarioLN, UsuarioLN>();

@@ -15,7 +15,7 @@ public partial class Usuario
 
     public DateTime FechaRegistro { get; set; }
 
-    public virtual ICollection<ParticipantePartida> ParticipantesPartida { get; set; } = new List<ParticipantePartida>();
+    public virtual ICollection<ParticipanteRonda> ParticipantesRonda { get; set; } = new List<ParticipanteRonda>();
 
     public virtual ICollection<SesionMovil> SesionesMoviles { get; set; } = new List<SesionMovil>();
 }

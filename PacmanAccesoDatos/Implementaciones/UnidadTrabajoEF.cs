@@ -21,17 +21,20 @@ namespace PacmanAccesoDatos.Implementaciones
         private IDbContextTransaction? _transaction = null;
 
         private RepositorioAD<Dificultad>? _TDificultad;
-        private RepositorioAD<Fruta>? _TFruta;
         private RepositorioAD<Nivel>? _TNivel;
-        private RepositorioAD<ParticipantePartida>? _TParticipantePartida;
+        private RepositorioAD<Objeto>? _TObjeto;
+        private RepositorioAD<ParticipanteRonda>? _TParticipanteRonda;
         private RepositorioAD<Partida>? _TPartida;
         private RepositorioAD<Personaje>? _TPersonaje;
+        private RepositorioAD<Ronda>? _TRonda;
         private RepositorioAD<SesionMovil>? _TSesionMovil;
         private RepositorioAD<Usuario>? _TUsuario;
 
         private RepositorioAD<HistorialEntrada>? _VHistorialUsuario;
+        private RepositorioAD<HistorialRonda>? _VHistorialRondas;
         private RepositorioAD<ProgresoJugador>? _VProgresoJugador;
         private RepositorioAD<RankingEntrada>? _VRanking;
+        private RepositorioAD<RankingTotalEntrada>? _VRankingTotal;
 
         #endregion
 
@@ -48,17 +51,6 @@ namespace PacmanAccesoDatos.Implementaciones
             }
         }
 
-        public IRepositorioAD<Fruta> TFruta
-        {
-            get
-            {
-                if (_TFruta == null)
-                    _TFruta = new RepositorioAD<Fruta>(_Contexto);
-
-                return _TFruta;
-            }
-        }
-
         public IRepositorioAD<Nivel> TNivel
         {
             get
@@ -70,15 +62,26 @@ namespace PacmanAccesoDatos.Implementaciones
             }
         }
 
-        public IRepositorioAD<ParticipantePartida> TParticipantePartida
+        public IRepositorioAD<Objeto> TObjeto
         {
             get
             {
-                if (_TParticipantePartida == null)
-                    _TParticipantePartida =
-                        new RepositorioAD<ParticipantePartida>(_Contexto);
+                if (_TObjeto == null)
+                    _TObjeto = new RepositorioAD<Objeto>(_Contexto);
 
-                return _TParticipantePartida;
+                return _TObjeto;
+            }
+        }
+
+        public IRepositorioAD<ParticipanteRonda> TParticipanteRonda
+        {
+            get
+            {
+                if (_TParticipanteRonda == null)
+                    _TParticipanteRonda =
+                        new RepositorioAD<ParticipanteRonda>(_Contexto);
+
+                return _TParticipanteRonda;
             }
         }
 
@@ -101,6 +104,17 @@ namespace PacmanAccesoDatos.Implementaciones
                     _TPersonaje = new RepositorioAD<Personaje>(_Contexto);
 
                 return _TPersonaje;
+            }
+        }
+
+        public IRepositorioAD<Ronda> TRonda
+        {
+            get
+            {
+                if (_TRonda == null)
+                    _TRonda = new RepositorioAD<Ronda>(_Contexto);
+
+                return _TRonda;
             }
         }
 
@@ -138,6 +152,18 @@ namespace PacmanAccesoDatos.Implementaciones
             }
         }
 
+        public IRepositorioAD<HistorialRonda> VHistorialRondas
+        {
+            get
+            {
+                if (_VHistorialRondas == null)
+                    _VHistorialRondas =
+                        new RepositorioAD<HistorialRonda>(_Contexto);
+
+                return _VHistorialRondas;
+            }
+        }
+
         public IRepositorioAD<ProgresoJugador> VProgresoJugador
         {
             get
@@ -158,6 +184,18 @@ namespace PacmanAccesoDatos.Implementaciones
                     _VRanking = new RepositorioAD<RankingEntrada>(_Contexto);
 
                 return _VRanking;
+            }
+        }
+
+        public IRepositorioAD<RankingTotalEntrada> VRankingTotal
+        {
+            get
+            {
+                if (_VRankingTotal == null)
+                    _VRankingTotal =
+                        new RepositorioAD<RankingTotalEntrada>(_Contexto);
+
+                return _VRankingTotal;
             }
         }
 

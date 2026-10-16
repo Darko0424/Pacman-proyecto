@@ -12,9 +12,12 @@ public enum Direccion
     Derecha = 4
 }
 
+// Intención de un jugador o de la IA en un instante: hacia dónde ir y si usa su objeto.
+public readonly record struct DecisionControl(Direccion Direccion, bool UsarObjeto);
+
 public interface IControlador
 {
     // Devuelve una intención; el sistema de movimiento valida el recorrido.
-    Direccion ObtenerDireccion(
+    DecisionControl ObtenerDecision(
         Entidad actor, EstadoPartida partida, TimeSpan tiempoSimulacion);
 }

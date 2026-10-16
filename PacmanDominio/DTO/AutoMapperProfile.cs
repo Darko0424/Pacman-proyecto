@@ -9,11 +9,12 @@ public class AutoMapperProfile : Profile
     public AutoMapperProfile()
     {
         CreateMap<TDificultad, Dificultad>().ReverseMap();
-        CreateMap<TFruta, Fruta>().ReverseMap();
         CreateMap<TNivel, Nivel>().ReverseMap();
-        CreateMap<TParticipantePartida, ParticipantePartida>().ReverseMap();
+        CreateMap<TObjeto, Objeto>().ReverseMap();
+        CreateMap<TParticipanteRonda, ParticipanteRonda>().ReverseMap();
         CreateMap<TPartida, Partida>().ReverseMap();
         CreateMap<TPersonaje, Personaje>().ReverseMap();
+        CreateMap<TRonda, Ronda>().ReverseMap();
         CreateMap<TSesionMovil, SesionMovil>().ReverseMap();
         CreateMap<Usuario, TUsuario>()
             .ForMember(destino => destino.Contrasena, opcion => opcion.Ignore());

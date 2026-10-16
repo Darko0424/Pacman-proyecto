@@ -13,5 +13,5 @@ public partial class Personaje
 
     public string Color { get; set; } = null!;
 
-    public virtual ICollection<ParticipantePartida> ParticipantesPartida { get; set; } = new List<ParticipantePartida>();
+    public virtual ICollection<ParticipanteRonda> ParticipantesRonda { get; set; } = new List<ParticipanteRonda>();
 }

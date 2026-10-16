@@ -19,15 +19,17 @@ public partial class PacManDbContext : DbContext
 
     public virtual DbSet<Dificultad> Dificultades { get; set; }
 
-    public virtual DbSet<Fruta> Frutas { get; set; }
-
     public virtual DbSet<Nivel> Niveles { get; set; }
 
-    public virtual DbSet<ParticipantePartida> ParticipantesPartida { get; set; }
+    public virtual DbSet<Objeto> Objetos { get; set; }
+
+    public virtual DbSet<ParticipanteRonda> ParticipantesRonda { get; set; }
 
     public virtual DbSet<Partida> Partidas { get; set; }
 
     public virtual DbSet<Personaje> Personajes { get; set; }
+
+    public virtual DbSet<Ronda> Rondas { get; set; }
 
     public virtual DbSet<SesionMovil> SesionesMoviles { get; set; }
 
@@ -35,9 +37,13 @@ public partial class PacManDbContext : DbContext
 
     public virtual DbSet<HistorialEntrada> VwHistorialUsuario { get; set; }
 
+    public virtual DbSet<HistorialRonda> VwHistorialRondas { get; set; }
+
     public virtual DbSet<ProgresoJugador> VwProgresoJugador { get; set; }
 
     public virtual DbSet<RankingEntrada> VwRanking { get; set; }
+
+    public virtual DbSet<RankingTotalEntrada> VwRankingTotal { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Name=ConnectionStrings:PacmanDb");
@@ -63,27 +69,6 @@ public partial class PacManDbContext : DbContext
                 .HasColumnName("nombre");
         });
 
-        modelBuilder.Entity<Fruta>(entity =>
-        {
-            entity.HasKey(e => e.IdFruta).HasName("PK__frutas__64905FA1156F38AB");
-
-            entity.ToTable("frutas");
-
-            entity.HasIndex(e => e.Nombre, "UQ__frutas__72AFBCC6F97EC0D1").IsUnique();
-
-            entity.Property(e => e.IdFruta).HasColumnName("id_fruta");
-            entity.Property(e => e.DuracionSeg).HasColumnName("duracion_seg");
-            entity.Property(e => e.Efecto)
-                .HasMaxLength(30)
-                .IsUnicode(false)
-                .HasColumnName("efecto");
-            entity.Property(e => e.Nombre)
-                .HasMaxLength(30)
-                .IsUnicode(false)
-                .HasColumnName("nombre");
-            entity.Property(e => e.Puntos).HasColumnName("puntos");
-        });
-
         modelBuilder.Entity<Nivel>(entity =>
         {
             entity.HasKey(e => e.IdNivel).HasName("PK__niveles__9CAF1C53BEF2D6BC");
@@ -104,17 +89,41 @@ public partial class PacManDbContext : DbContext
                 .HasColumnName("velocidad_base");
         });
 
-        modelBuilder.Entity<ParticipantePartida>(entity =>
+        modelBuilder.Entity<Objeto>(entity =>
         {
-            entity.HasKey(e => e.IdParticipante).HasName("PK__particip__A88054DC9A7754EA");
+            entity.HasKey(e => e.IdObjeto);
 
-            entity.ToTable("participantes_partida");
+            entity.ToTable("objetos");
+
+            entity.HasIndex(e => e.Nombre).IsUnique();
+
+            entity.Property(e => e.IdObjeto).HasColumnName("id_objeto");
+            entity.Property(e => e.Bando)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("bando");
+            entity.Property(e => e.DuracionSeg).HasColumnName("duracion_seg");
+            entity.Property(e => e.Efecto)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("efecto");
+            entity.Property(e => e.Nombre)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("nombre");
+        });
+
+        modelBuilder.Entity<ParticipanteRonda>(entity =>
+        {
+            entity.HasKey(e => e.IdParticipante);
+
+            entity.ToTable("participantes_ronda");
 
             entity.HasIndex(e => e.IdUsuario, "IX_participantes_usuario");
 
-            entity.HasIndex(e => new { e.IdPartida, e.IdPersonaje }, "UQ_participantes_personaje").IsUnique();
+            entity.HasIndex(e => new { e.IdRonda, e.IdPersonaje }, "UQ_participantes_personaje").IsUnique();
 
-            entity.HasIndex(e => new { e.IdPartida, e.IdUsuario }, "UX_participantes_usuario")
+            entity.HasIndex(e => new { e.IdRonda, e.IdUsuario }, "UX_participantes_usuario")
                 .IsUnique()
                 .HasFilter("([id_usuario] IS NOT NULL)");
 
@@ -122,23 +131,23 @@ public partial class PacManDbContext : DbContext
             entity.Property(e => e.Abandono).HasColumnName("abandono");
             entity.Property(e => e.EsIa).HasColumnName("es_ia");
             entity.Property(e => e.FantasmasComidos).HasColumnName("fantasmas_comidos");
-            entity.Property(e => e.FrutasComidas).HasColumnName("frutas_comidas");
-            entity.Property(e => e.IdPartida).HasColumnName("id_partida");
             entity.Property(e => e.IdPersonaje).HasColumnName("id_personaje");
+            entity.Property(e => e.IdRonda).HasColumnName("id_ronda");
             entity.Property(e => e.IdUsuario).HasColumnName("id_usuario");
+            entity.Property(e => e.ObjetosUsados).HasColumnName("objetos_usados");
             entity.Property(e => e.PacmansAtrapados).HasColumnName("pacmans_atrapados");
             entity.Property(e => e.Puntuacion).HasColumnName("puntuacion");
 
-            entity.HasOne(d => d.IdPartidaNavigation).WithMany(p => p.ParticipantesPartida)
-                .HasForeignKey(d => d.IdPartida)
-                .HasConstraintName("FK_participantes_partidas");
+            entity.HasOne(d => d.IdRondaNavigation).WithMany(p => p.ParticipantesRonda)
+                .HasForeignKey(d => d.IdRonda)
+                .HasConstraintName("FK_participantes_rondas");
 
-            entity.HasOne(d => d.IdPersonajeNavigation).WithMany(p => p.ParticipantesPartida)
+            entity.HasOne(d => d.IdPersonajeNavigation).WithMany(p => p.ParticipantesRonda)
                 .HasForeignKey(d => d.IdPersonaje)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_participantes_personajes");
 
-            entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.ParticipantesPartida)
+            entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.ParticipantesRonda)
                 .HasForeignKey(d => d.IdUsuario)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_participantes_usuarios");
@@ -152,11 +161,9 @@ public partial class PacManDbContext : DbContext
 
             entity.HasIndex(e => e.FechaInicio, "IX_partidas_fecha").IsDescending();
 
+            entity.HasIndex(e => new { e.CodigoSala, e.FechaInicio }, "UX_partidas_sala_inicio").IsUnique();
+
             entity.Property(e => e.IdPartida).HasColumnName("id_partida");
-            entity.Property(e => e.BandoGanador)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasColumnName("bando_ganador");
             entity.Property(e => e.CodigoSala)
                 .HasMaxLength(6)
                 .IsUnicode(false)
@@ -167,11 +174,8 @@ public partial class PacManDbContext : DbContext
                 .HasDefaultValue("EN_CURSO")
                 .HasColumnName("estado");
             entity.Property(e => e.FechaFin).HasColumnName("fecha_fin");
-            entity.Property(e => e.FechaInicio)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnName("fecha_inicio");
+            entity.Property(e => e.FechaInicio).HasColumnName("fecha_inicio");
             entity.Property(e => e.IdDificultad).HasColumnName("id_dificultad");
-            entity.Property(e => e.IdNivelAlcanzado).HasColumnName("id_nivel_alcanzado");
             entity.Property(e => e.Modo)
                 .HasMaxLength(15)
                 .IsUnicode(false)
@@ -181,11 +185,34 @@ public partial class PacManDbContext : DbContext
                 .HasForeignKey(d => d.IdDificultad)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_partidas_dificultades");
+        });
 
-            entity.HasOne(d => d.IdNivelAlcanzadoNavigation).WithMany(p => p.Partidas)
-                .HasForeignKey(d => d.IdNivelAlcanzado)
+        modelBuilder.Entity<Ronda>(entity =>
+        {
+            entity.HasKey(e => e.IdRonda);
+
+            entity.ToTable("rondas");
+
+            entity.HasIndex(e => new { e.IdPartida, e.IdNivel }, "UQ_rondas_partida_nivel").IsUnique();
+
+            entity.Property(e => e.IdRonda).HasColumnName("id_ronda");
+            entity.Property(e => e.BandoGanador)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("bando_ganador");
+            entity.Property(e => e.FechaFin).HasColumnName("fecha_fin");
+            entity.Property(e => e.FechaInicio).HasColumnName("fecha_inicio");
+            entity.Property(e => e.IdNivel).HasColumnName("id_nivel");
+            entity.Property(e => e.IdPartida).HasColumnName("id_partida");
+
+            entity.HasOne(d => d.IdPartidaNavigation).WithMany(p => p.Rondas)
+                .HasForeignKey(d => d.IdPartida)
+                .HasConstraintName("FK_rondas_partidas");
+
+            entity.HasOne(d => d.IdNivelNavigation).WithMany(p => p.Rondas)
+                .HasForeignKey(d => d.IdNivel)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_partidas_niveles");
+                .HasConstraintName("FK_rondas_niveles");
         });
 
         modelBuilder.Entity<Personaje>(entity =>
@@ -270,6 +297,11 @@ public partial class PacManDbContext : DbContext
                 .HasNoKey()
                 .ToView("vw_historial_usuario");
 
+            entity.Property(e => e.Abandono).HasColumnName("abandono");
+            entity.Property(e => e.CodigoSala)
+                .HasMaxLength(6)
+                .IsUnicode(false)
+                .HasColumnName("codigo_sala");
             entity.Property(e => e.Dificultad)
                 .HasMaxLength(15)
                 .IsUnicode(false)
@@ -281,8 +313,6 @@ public partial class PacManDbContext : DbContext
             entity.Property(e => e.FantasmasComidos).HasColumnName("fantasmas_comidos");
             entity.Property(e => e.FechaFin).HasColumnName("fecha_fin");
             entity.Property(e => e.FechaInicio).HasColumnName("fecha_inicio");
-            entity.Property(e => e.FrutasComidas).HasColumnName("frutas_comidas");
-            entity.Property(e => e.Gano).HasColumnName("gano");
             entity.Property(e => e.IdPartida).HasColumnName("id_partida");
             entity.Property(e => e.IdUsuario).HasColumnName("id_usuario");
             entity.Property(e => e.Modo)
@@ -290,6 +320,37 @@ public partial class PacManDbContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("modo");
             entity.Property(e => e.NivelAlcanzado).HasColumnName("nivel_alcanzado");
+            entity.Property(e => e.NivelesGanados).HasColumnName("niveles_ganados");
+            entity.Property(e => e.NivelesJugados).HasColumnName("niveles_jugados");
+            entity.Property(e => e.ObjetosUsados).HasColumnName("objetos_usados");
+            entity.Property(e => e.PacmansAtrapados).HasColumnName("pacmans_atrapados");
+            entity.Property(e => e.Puntuacion).HasColumnName("puntuacion");
+        });
+
+        modelBuilder.Entity<HistorialRonda>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("vw_historial_rondas");
+
+            entity.Property(e => e.Abandono).HasColumnName("abandono");
+            entity.Property(e => e.BandoGanador)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("bando_ganador");
+            entity.Property(e => e.FantasmasComidos).HasColumnName("fantasmas_comidos");
+            entity.Property(e => e.FechaFin).HasColumnName("fecha_fin");
+            entity.Property(e => e.FechaInicio).HasColumnName("fecha_inicio");
+            entity.Property(e => e.Gano).HasColumnName("gano");
+            entity.Property(e => e.IdPartida).HasColumnName("id_partida");
+            entity.Property(e => e.IdRonda).HasColumnName("id_ronda");
+            entity.Property(e => e.IdUsuario).HasColumnName("id_usuario");
+            entity.Property(e => e.Nivel)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("nivel");
+            entity.Property(e => e.NumeroNivel).HasColumnName("numero_nivel");
+            entity.Property(e => e.ObjetosUsados).HasColumnName("objetos_usados");
             entity.Property(e => e.PacmansAtrapados).HasColumnName("pacmans_atrapados");
             entity.Property(e => e.Personaje)
                 .HasMaxLength(20)
@@ -331,12 +392,28 @@ public partial class PacManDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("nombre_usuario");
-            entity.Property(e => e.PartidasEnRol).HasColumnName("partidas_en_rol");
+            entity.Property(e => e.NivelesEnRol).HasColumnName("niveles_en_rol");
             entity.Property(e => e.Posicion).HasColumnName("posicion");
             entity.Property(e => e.Rol)
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("rol");
+        });
+
+        modelBuilder.Entity<RankingTotalEntrada>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("vw_ranking_total");
+
+            entity.Property(e => e.IdUsuario).HasColumnName("id_usuario");
+            entity.Property(e => e.NombreUsuario)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("nombre_usuario");
+            entity.Property(e => e.PartidasJugadas).HasColumnName("partidas_jugadas");
+            entity.Property(e => e.Posicion).HasColumnName("posicion");
+            entity.Property(e => e.PuntosTotales).HasColumnName("puntos_totales");
         });
 
         OnModelCreatingPartial(modelBuilder);

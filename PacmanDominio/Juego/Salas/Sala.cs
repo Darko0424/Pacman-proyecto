@@ -1,69 +1,81 @@
-using PacmanDominio.Juego.Actores;
-
 namespace PacmanDominio.Juego.Salas;
 
-// El gestor futuro serializará las acciones de esta sala.
+public enum EstadoSala
+{
+    // Esperando jugadores; el anfitrión configura e inicia
+    Lobby = 1,
+    Jugando = 2,
+    // Vuelta breve al lobby entre niveles: resultados y nuevos roles
+    Transicion = 3,
+    Finalizada = 4
+}
+
+// Una sala juega una serie de niveles. El gestor serializa sus acciones; los
+// estados de cada nivel los construye la lógica y aquí solo se validan.
 public sealed class Sala
 {
     private const int LargoMaximoCodigo = 6;
-    private const int CantidadMaximaHumanos =
-        ConfiguracionPartida.CantidadPacMan + ConfiguracionPartida.CantidadFantasmasHumanos;
 
     private readonly List<JugadorConectado> _jugadores = new();
 
     public string Codigo { get; }
+
+    // En orden de ingreso: si el anfitrión se va, lo reemplaza el siguiente
     public IReadOnlyList<JugadorConectado> Jugadores { get; }
+
+    public int? IdAnfitrion { get; private set; }
+    public ConfiguracionSala Configuracion { get; private set; } = ConfiguracionSala.PorDefecto;
+    public EstadoSala Estado { get; private set; } = EstadoSala.Lobby;
+
+    // Se fija al iniciar la serie según cuántos jugadores había
+    public ModoPartida? Modo { get; private set; }
+
+    // Nivel en juego, o el que acaba de terminar durante la transición
     public EstadoPartida? Partida { get; private set; }
 
-    public byte? IdPersonajeBot
+    public DateTime? FechaInicio { get; private set; }
+
+    // Identificador de la partida guardada en la base de datos
+    public int? IdPartida { get; private set; }
+
+    // Contra la IA el jugador conserva su rol en todos los niveles
+    public Bando? RolContraIa { get; private set; }
+
+    public int NumeroNivel
     {
         get
         {
-            if (_jugadores.Count(jugador => EsPersonajeFantasma(jugador.IdPersonaje)) !=
-                ConfiguracionPartida.CantidadFantasmasHumanos)
-            {
-                return null;
-            }
-
-            for (byte idPersonaje = 3; idPersonaje <= 5; idPersonaje++)
-            {
-                if (!_jugadores.Any(jugador => jugador.IdPersonaje == idPersonaje))
-                {
-                    return idPersonaje;
-                }
-            }
-
-            return null;
+            return Partida?.NumeroNivel ?? 0;
         }
     }
 
-    public bool PartidaIniciada
+    public bool Vacia
     {
         get
         {
-            return Partida != null;
+            return _jugadores.Count == 0;
         }
     }
 
+    public ModoPartida ModoSegunJugadores
+    {
+        get
+        {
+            return _jugadores.Count == 1 ? ModoPartida.ContraIa : ModoPartida.Multijugador;
+        }
+    }
+
+    // Los desconectados no bloquean el inicio: la IA mueve su personaje hasta que vuelvan
     public bool PuedeIniciar
     {
         get
         {
-            if (PartidaIniciada || _jugadores.Count != CantidadMaximaHumanos)
-            {
-                return false;
-            }
+            var anfitrion = BuscarJugador(IdAnfitrion);
 
-            if (_jugadores.Any(jugador =>
-                !jugador.EstaConectado || !jugador.IdPersonaje.HasValue))
-            {
-                return false;
-            }
-
-            return _jugadores.Count(jugador => EsPersonajePacMan(jugador.IdPersonaje)) ==
-                    ConfiguracionPartida.CantidadPacMan &&
-                _jugadores.Count(jugador => EsPersonajeFantasma(jugador.IdPersonaje)) ==
-                    ConfiguracionPartida.CantidadFantasmasHumanos;
+            return Estado == EstadoSala.Lobby &&
+                _jugadores.Count >= 1 &&
+                _jugadores.Count <= ConfiguracionPartida.CantidadMaximaHumanos &&
+                anfitrion != null && anfitrion.EstaConectado;
         }
     }
 
@@ -82,12 +94,15 @@ public sealed class Sala
         Jugadores = _jugadores.AsReadOnly();
     }
 
-    public bool Ingresar(int idUsuario, string idConexion)
+    // El primero en entrar a una sala sin anfitrión (quien la crea) pasa a serlo
+    public bool Ingresar(int idUsuario, string nombreUsuario, string idConexion)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idUsuario);
+        ArgumentException.ThrowIfNullOrWhiteSpace(nombreUsuario);
         ArgumentException.ThrowIfNullOrWhiteSpace(idConexion);
 
-        if (PartidaIniciada || _jugadores.Count >= CantidadMaximaHumanos)
+        if (Estado != EstadoSala.Lobby ||
+            _jugadores.Count >= ConfiguracionPartida.CantidadMaximaHumanos)
         {
             return false;
         }
@@ -98,58 +113,52 @@ public sealed class Sala
             return false;
         }
 
-        _jugadores.Add(new JugadorConectado(idUsuario, idConexion));
+        _jugadores.Add(new JugadorConectado(idUsuario, nombreUsuario, idConexion));
+        IdAnfitrion ??= idUsuario;
 
         return true;
     }
 
-    public bool AsignarPersonaje(int idUsuario, byte? idPersonaje)
+    public bool Configurar(int idUsuario, ConfiguracionSala configuracion)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idUsuario);
+        ArgumentNullException.ThrowIfNull(configuracion);
 
-        if (idPersonaje.HasValue &&
-            !EsPersonajePacMan(idPersonaje) && !EsPersonajeFantasma(idPersonaje))
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(idPersonaje), "El personaje no pertenece al catálogo del juego.");
-        }
-
-        if (PartidaIniciada)
+        if (Estado != EstadoSala.Lobby || idUsuario != IdAnfitrion)
         {
             return false;
+        }
+
+        Configuracion = configuracion;
+
+        return true;
+    }
+
+    // Preferencia para jugar solo contra la IA; null = que decida el sorteo
+    public bool ElegirRol(int idUsuario, Bando? rol)
+    {
+        if (rol.HasValue && !Enum.IsDefined(rol.Value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(rol));
         }
 
         var jugador = BuscarJugador(idUsuario);
 
-        if (jugador == null)
+        if (Estado != EstadoSala.Lobby || jugador == null)
         {
             return false;
         }
 
-        if (idPersonaje.HasValue && _jugadores.Any(
-            otroJugador => otroJugador.IdUsuario != idUsuario &&
-                otroJugador.IdPersonaje == idPersonaje))
-        {
-            return false;
-        }
-
-        jugador.AsignarPersonaje(idPersonaje);
+        jugador.ElegirRol(rol);
 
         return true;
     }
 
+    // Salida voluntaria. En pleno nivel la IA toma su personaje hasta el final del nivel.
     public bool Salir(int idUsuario)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idUsuario);
-
-        if (PartidaIniciada)
-        {
-            return false;
-        }
-
         var jugador = BuscarJugador(idUsuario);
 
-        if (jugador == null)
+        if (jugador == null || Estado == EstadoSala.Finalizada)
         {
             return false;
         }
@@ -157,9 +166,26 @@ public sealed class Sala
         _jugadores.Remove(jugador);
         jugador.Desconectar();
 
+        if (Estado == EstadoSala.Jugando)
+        {
+            Partida!.CederControlAIa(idUsuario, abandono: true);
+        }
+
+        if (IdAnfitrion == idUsuario)
+        {
+            IdAnfitrion = _jugadores.FirstOrDefault()?.IdUsuario;
+        }
+
+        // Sin humanos no tiene sentido seguir la serie
+        if (_jugadores.Count == 0 && Estado != EstadoSala.Lobby)
+        {
+            Estado = EstadoSala.Finalizada;
+        }
+
         return true;
     }
 
+    // Se conserva la plaza; en pleno nivel la IA mueve su personaje hasta que vuelva.
     public bool Desconectar(string idConexion)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(idConexion);
@@ -172,20 +198,23 @@ public sealed class Sala
             return false;
         }
 
-        // Se conserva la plaza y el personaje; la política de abandono sigue pendiente.
         jugador.Desconectar();
+
+        if (Estado == EstadoSala.Jugando)
+        {
+            Partida!.CederControlAIa(jugador.IdUsuario, abandono: false);
+        }
 
         return true;
     }
 
     public bool Reconectar(int idUsuario, string idConexion)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idUsuario);
         ArgumentException.ThrowIfNullOrWhiteSpace(idConexion);
 
         var jugador = BuscarJugador(idUsuario);
 
-        if (jugador == null)
+        if (jugador == null || Estado == EstadoSala.Finalizada)
         {
             return false;
         }
@@ -200,78 +229,184 @@ public sealed class Sala
         // Solo queda vigente la nueva conexión, aunque la anterior avise su cierre después.
         jugador.Reconectar(idConexion);
 
+        if (Estado == EstadoSala.Jugando)
+        {
+            Partida!.RecuperarControl(idUsuario);
+        }
+
         return true;
     }
 
-    public bool IniciarPartida(EstadoPartida partida)
+    // Solo el anfitrión. El primer nivel lo construye la lógica con los roles ya sorteados.
+    public bool IniciarPartida(int idUsuario, EstadoPartida primerNivel, DateTime fechaInicio)
     {
-        ArgumentNullException.ThrowIfNull(partida);
+        ArgumentNullException.ThrowIfNull(primerNivel);
 
-        if (!PuedeIniciar || !CorrespondeALaSala(partida) || !EsEstadoInicial(partida))
+        if (idUsuario != IdAnfitrion || !PuedeIniciar ||
+            primerNivel.NumeroNivel != 1 ||
+            primerNivel.Modo != ModoSegunJugadores ||
+            !CorrespondeALaSala(primerNivel))
         {
             return false;
+        }
+
+        Bando? rolContraIa = null;
+
+        if (primerNivel.Modo == ModoPartida.ContraIa)
+        {
+            var jugador = _jugadores[0];
+            rolContraIa = primerNivel.ObtenerActorDeUsuario(jugador.IdUsuario)!.Bando;
+
+            if (jugador.RolPreferido.HasValue && jugador.RolPreferido != rolContraIa)
+            {
+                return false;
+            }
         }
 
         // La asociación se realiza al final para no dejar cambios parciales al rechazar el inicio.
-        if (!partida.AsociarSala(Codigo))
+        if (!primerNivel.AsociarSala(Codigo))
         {
             return false;
         }
 
-        Partida = partida;
+        Modo = primerNivel.Modo;
+        RolContraIa = rolContraIa;
+        FechaInicio = fechaInicio;
+        IdPartida = null;
+        AceptarNivel(primerNivel);
 
         return true;
     }
 
-    private JugadorConectado? BuscarJugador(int idUsuario)
+    // Lo llama la lógica cuando el nivel tiene ganador
+    public bool TerminarNivel()
+    {
+        if (Estado != EstadoSala.Jugando || !Partida!.Terminada)
+        {
+            return false;
+        }
+
+        Estado = NumeroNivel == ConfiguracionPartida.CantidadNiveles
+            ? EstadoSala.Finalizada
+            : EstadoSala.Transicion;
+
+        return true;
+    }
+
+    // Tras la transición: el siguiente nivel, con los roles sorteados de nuevo
+    public bool IniciarSiguienteNivel(EstadoPartida siguienteNivel)
+    {
+        ArgumentNullException.ThrowIfNull(siguienteNivel);
+
+        if (Estado != EstadoSala.Transicion ||
+            siguienteNivel.NumeroNivel != NumeroNivel + 1 ||
+            siguienteNivel.Modo != Modo ||
+            !CorrespondeALaSala(siguienteNivel))
+        {
+            return false;
+        }
+
+        if (Modo == ModoPartida.ContraIa &&
+            siguienteNivel.ObtenerActorDeUsuario(_jugadores[0].IdUsuario)!.Bando != RolContraIa)
+        {
+            return false;
+        }
+
+        if (!siguienteNivel.AsociarSala(Codigo))
+        {
+            return false;
+        }
+
+        AceptarNivel(siguienteNivel);
+
+        return true;
+    }
+
+    public bool RegistrarIdPartida(int idPartida)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idPartida);
+
+        if (IdPartida.HasValue || Estado == EstadoSala.Lobby)
+        {
+            return false;
+        }
+
+        IdPartida = idPartida;
+
+        return true;
+    }
+
+    // Corta la serie, por ejemplo si el servidor cierra la sala
+    public bool Finalizar()
+    {
+        if (Estado == EstadoSala.Lobby || Estado == EstadoSala.Finalizada)
+        {
+            return false;
+        }
+
+        Estado = EstadoSala.Finalizada;
+
+        return true;
+    }
+
+    // Terminada la serie, los que siguen en la sala pueden jugar otra
+    public bool VolverAlLobby()
+    {
+        if (Estado != EstadoSala.Finalizada || _jugadores.Count == 0)
+        {
+            return false;
+        }
+
+        Estado = EstadoSala.Lobby;
+        Modo = null;
+        Partida = null;
+        FechaInicio = null;
+        IdPartida = null;
+        RolContraIa = null;
+
+        foreach (var jugador in _jugadores)
+        {
+            jugador.AsignarPersonaje(null);
+        }
+
+        return true;
+    }
+
+    private void AceptarNivel(EstadoPartida nivel)
+    {
+        Partida = nivel;
+        Estado = EstadoSala.Jugando;
+
+        foreach (var jugador in _jugadores)
+        {
+            jugador.AsignarPersonaje(nivel.ObtenerActorDeUsuario(jugador.IdUsuario)!.IdPersonaje);
+
+            if (!jugador.EstaConectado)
+            {
+                nivel.CederControlAIa(jugador.IdUsuario, abandono: false);
+            }
+        }
+    }
+
+    private JugadorConectado? BuscarJugador(int? idUsuario)
     {
         return _jugadores.FirstOrDefault(jugador => jugador.IdUsuario == idUsuario);
     }
 
-    private bool CorrespondeALaSala(EstadoPartida partida)
+    // Cada jugador de la sala controla exactamente un personaje, y no hay otros humanos
+    private bool CorrespondeALaSala(EstadoPartida nivel)
     {
-        if (partida.Pacmans.Any(pacman => !EsPersonajePacMan(pacman.IdPersonaje)) ||
-            partida.Fantasmas.Any(fantasma => !EsPersonajeFantasma(fantasma.IdPersonaje)))
+        if (nivel.CodigoSala != null || !nivel.EsEstadoInicial ||
+            nivel.Configuracion != Configuracion)
         {
             return false;
         }
 
-        var humanos = partida.Pacmans.Cast<Entidad>()
-            .Concat(partida.Fantasmas)
-            .Where(entidad => !entidad.EsIa)
-            .ToList();
+        var usuariosNivel = nivel.Actores
+            .Where(actor => !actor.EsIa)
+            .Select(actor => actor.IdUsuario!.Value)
+            .ToHashSet();
 
-        if (humanos.Count != _jugadores.Count || _jugadores.Any(
-            jugador => !humanos.Any(actor =>
-                actor.IdUsuario == jugador.IdUsuario && actor.IdPersonaje == jugador.IdPersonaje)))
-        {
-            return false;
-        }
-
-        var bots = partida.Fantasmas.Where(fantasma => fantasma.EsIa).ToList();
-
-        return bots.Count == ConfiguracionPartida.CantidadFantasmasIa &&
-            !_jugadores.Any(jugador => jugador.IdPersonaje == bots[0].IdPersonaje);
-    }
-
-    private static bool EsEstadoInicial(EstadoPartida partida)
-    {
-        return partida.TiempoSimulacion == TimeSpan.Zero &&
-            partida.Laberinto.BolasConsumidas == 0 &&
-            partida.Frutas.All(fruta => fruta.Disponible) &&
-            partida.Pacmans.All(pacman =>
-                pacman.VidasRestantes == ConfiguracionPartida.VidasInicialesPacMan &&
-                !pacman.ReaparicionPendiente && pacman.InvencibleHasta == TimeSpan.Zero);
-    }
-
-    // Identificadores definidos en el catálogo SQL existente.
-    private static bool EsPersonajePacMan(byte? idPersonaje)
-    {
-        return idPersonaje == 1 || idPersonaje == 2;
-    }
-
-    private static bool EsPersonajeFantasma(byte? idPersonaje)
-    {
-        return idPersonaje == 3 || idPersonaje == 4 || idPersonaje == 5;
+        return usuariosNivel.SetEquals(_jugadores.Select(jugador => jugador.IdUsuario));
     }
 }

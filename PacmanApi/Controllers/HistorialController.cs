@@ -36,6 +36,25 @@ public class HistorialController : ControllerBase
         return Ok(resultado);
     }
 
+    // Detalle por nivel de una partida del usuario de la sesión
+    [HttpGet("Rondas/{idPartida:int}")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Rondas(int idPartida)
+    {
+        var sesion = await _usuarioLN.ValidarSesionAsync(Request.ObtenerToken());
+
+        if (!sesion.Success || sesion.Data == null)
+            return Unauthorized(sesion);
+
+        var resultado = await _historialLN.ListarRondasAsync(
+            sesion.Data.IdUsuario, idPartida);
+
+        if (!resultado.Success)
+            return NotFound(resultado);
+
+        return Ok(resultado);
+    }
+
     [HttpGet("Progreso")]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Progreso()

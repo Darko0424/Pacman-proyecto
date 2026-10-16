@@ -104,7 +104,7 @@ namespace PacmanLogicaNegocios.Implementacion
                 {
                     resultado.Success = false;
                     resultado.Error =
-                        "El usuario aún no tiene partidas finalizadas con ese rol.";
+                        "El usuario aún no tiene partidas multijugador finalizadas con ese rol.";
                     return resultado;
                 }
 
@@ -117,6 +117,87 @@ namespace PacmanLogicaNegocios.Implementacion
                     "Error al obtener posición del IdUsuario {IdUsuario} en {Rol}",
                     idUsuario,
                     rol);
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
+        public async Task<Respuesta<IEnumerable<RankingTotalEntrada>>> ListarTotalAsync()
+        {
+            var resultado = new Respuesta<IEnumerable<RankingTotalEntrada>>();
+
+            try
+            {
+                var respuestaRepositorio =
+                    await _unidadDeTrabajo.VRankingTotal.ListarAsync();
+
+                if (!respuestaRepositorio.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = respuestaRepositorio.Error;
+                    return resultado;
+                }
+
+                resultado.Data = (respuestaRepositorio.Data ?? [])
+                    .OrderBy(x => x.Posicion)
+                    .ThenBy(x => x.NombreUsuario);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al listar el ranking total.");
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
+        public async Task<Respuesta<RankingTotalEntrada>> ObtenerPosicionTotalAsync(int idUsuario)
+        {
+            var resultado = new Respuesta<RankingTotalEntrada>();
+
+            try
+            {
+                if (idUsuario <= 0)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Usuario no válido.";
+                    return resultado;
+                }
+
+                // RANK() se calcula dentro de la vista, así que filtrar por
+                // usuario no altera la posición
+                var respuestaRepositorio =
+                    await _unidadDeTrabajo.VRankingTotal.ObtenerEntidadAsync(
+                        x => x.IdUsuario == idUsuario);
+
+                if (!respuestaRepositorio.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = respuestaRepositorio.Error;
+                    return resultado;
+                }
+
+                if (respuestaRepositorio.Data == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error =
+                        "El usuario aún no tiene partidas multijugador finalizadas.";
+                    return resultado;
+                }
+
+                resultado.Data = respuestaRepositorio.Data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error al obtener posición total del IdUsuario {IdUsuario}",
+                    idUsuario);
 
                 resultado.Success = false;
                 resultado.Error = ex.GetBaseException().Message;

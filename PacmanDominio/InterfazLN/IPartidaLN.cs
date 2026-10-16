@@ -3,13 +3,24 @@ using PacmanUtilitarios;
 
 namespace PacmanDominio.InterfazLN;
 
+// La partida se guarda por partes mientras se juega: al iniciar la serie,
+// al terminar cada nivel (ronda) y al terminar la serie. Todas las operaciones
+// toleran reintentos sin duplicar datos.
 public interface IPartidaLN
 {
-    // Valida y guarda conjuntamente el resultado de la partida y sus participantes.
-    // La implementación debe evitar resultados parciales y duplicados al reintentar.
-    Task<Respuesta<TPartida>> GuardarResultadoAsync(
-        TPartida partida, IReadOnlyCollection<TParticipantePartida> participantes);
+    // Registra la serie EN_CURSO. Un reintento (misma sala y fecha de inicio)
+    // devuelve la partida ya registrada.
+    Task<Respuesta<TPartida>> IniciarAsync(TPartida partida);
+
+    // Guarda conjuntamente un nivel y sus participantes. Un reintento del mismo
+    // nivel devuelve la ronda ya guardada.
+    Task<Respuesta<TRonda>> GuardarRondaAsync(
+        TRonda ronda, IReadOnlyCollection<TParticipanteRonda> participantes);
+
+    // Cierra la serie como FINALIZADA o ABANDONADA
+    Task<Respuesta<TPartida>> FinalizarAsync(TPartida datos);
 
     Task<Respuesta<TPartida>> ObtenerAsync(TPartida datos);
-    Task<Respuesta<IEnumerable<TParticipantePartida>>> ListarParticipantesAsync(int idPartida);
+    Task<Respuesta<IEnumerable<TRonda>>> ListarRondasAsync(int idPartida);
+    Task<Respuesta<IEnumerable<TParticipanteRonda>>> ListarParticipantesAsync(int idRonda);
 }

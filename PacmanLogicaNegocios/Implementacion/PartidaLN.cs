@@ -9,20 +9,15 @@ using PacmanUtilitarios;
 
 namespace PacmanLogicaNegocios.Implementacion
 {
+    // La serie se guarda por partes mientras se juega: inicio, cada nivel y cierre.
     public class PartidaLN : BaseLN<PartidaLN>, IPartidaLN
     {
         // Mismos valores que los CHECK de la tabla partidas
-        private const string ModoMultijugador = "MULTIJUGADOR";
-        private const string ModoContraIa = "CONTRA_IA";
+        private const string EstadoEnCurso = "EN_CURSO";
         private const string EstadoFinalizada = "FINALIZADA";
         private const string EstadoAbandonada = "ABANDONADA";
-        private static readonly string[] BandosValidos = ["PACMAN", "FANTASMAS"];
 
         private const int LargoMaximoCodigoSala = 6;
-        private const int CantidadMaximaParticipantes =
-            ConfiguracionPartida.CantidadPacMan +
-            ConfiguracionPartida.CantidadFantasmasHumanos +
-            ConfiguracionPartida.CantidadFantasmasIa;
 
         public PartidaLN(
             IUnidadTrabajoEF unidadTrabajo,
@@ -32,14 +27,13 @@ namespace PacmanLogicaNegocios.Implementacion
         {
         }
 
-        public async Task<Respuesta<TPartida>> GuardarResultadoAsync(
-            TPartida partida, IReadOnlyCollection<TParticipantePartida> participantes)
+        public async Task<Respuesta<TPartida>> IniciarAsync(TPartida partida)
         {
             var resultado = new Respuesta<TPartida>();
 
             try
             {
-                if (partida == null || participantes == null)
+                if (partida == null)
                 {
                     resultado.Success = false;
                     resultado.Error = "Faltan los datos de la partida.";
@@ -47,16 +41,9 @@ namespace PacmanLogicaNegocios.Implementacion
                 }
 
                 partida.Modo = (partida.Modo ?? string.Empty).Trim().ToUpperInvariant();
-                partida.Estado = (partida.Estado ?? string.Empty).Trim().ToUpperInvariant();
-                partida.BandoGanador = string.IsNullOrWhiteSpace(partida.BandoGanador)
-                    ? null
-                    : partida.BandoGanador.Trim().ToUpperInvariant();
-                partida.CodigoSala = string.IsNullOrWhiteSpace(partida.CodigoSala)
-                    ? null
-                    : partida.CodigoSala.Trim();
+                partida.CodigoSala = (partida.CodigoSala ?? string.Empty).Trim();
 
-                var errorValidacion =
-                    ValidarPartida(partida) ?? ValidarParticipantes(participantes);
+                var errorValidacion = ValidarInicio(partida);
 
                 if (errorValidacion != null)
                 {
@@ -65,19 +52,29 @@ namespace PacmanLogicaNegocios.Implementacion
                     return resultado;
                 }
 
-                errorValidacion = await ValidarReferenciasAsync(partida, participantes);
+                var dificultad = await _unidadDeTrabajo.TDificultad.ContarAsync(
+                    x => x.IdDificultad == partida.IdDificultad);
 
-                if (errorValidacion != null)
+                if (!dificultad.Success)
                 {
                     resultado.Success = false;
-                    resultado.Error = errorValidacion;
+                    resultado.Error = dificultad.Error;
                     return resultado;
                 }
 
-                // Un reintento trae la misma sala, modo y fecha de inicio:
-                // se devuelve lo ya guardado en vez de duplicarlo
+                if (dificultad.Data == 0)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Dificultad no encontrada.";
+                    return resultado;
+                }
+
+                // Un reintento trae la misma sala y fecha de inicio:
+                // se devuelve lo ya registrado en vez de duplicarlo
                 var partidaExistente =
-                    await BuscarPartidaGuardadaAsync(partida, participantes);
+                    await _unidadDeTrabajo.TPartida.ObtenerEntidadAsync(
+                        x => x.CodigoSala == partida.CodigoSala &&
+                             x.FechaInicio == partida.FechaInicio);
 
                 if (!partidaExistente.Success)
                 {
@@ -88,36 +85,157 @@ namespace PacmanLogicaNegocios.Implementacion
 
                 if (partidaExistente.Data != null)
                 {
+                    if (partidaExistente.Data.Modo != partida.Modo ||
+                        partidaExistente.Data.IdDificultad != partida.IdDificultad)
+                    {
+                        resultado.Success = false;
+                        resultado.Error =
+                            "La sala ya registró otra partida con esa fecha de inicio.";
+                        return resultado;
+                    }
+
                     resultado.Data = _mapper.Map<TPartida>(partidaExistente.Data);
                     return resultado;
                 }
 
                 var entidad = _mapper.Map<Partida>(partida);
                 entidad.IdPartida = 0;
+                entidad.Estado = EstadoEnCurso;
+                entidad.FechaFin = null;
+
+                var respuestaRepositorio =
+                    await _unidadDeTrabajo.TPartida.InsertarAsync(entidad);
+
+                if (!respuestaRepositorio.Success || respuestaRepositorio.Data == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = respuestaRepositorio.Error;
+                    return resultado;
+                }
+
+                resultado.Data = _mapper.Map<TPartida>(respuestaRepositorio.Data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error al iniciar la partida de la sala {CodigoSala}",
+                    partida?.CodigoSala);
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
+        public async Task<Respuesta<TRonda>> GuardarRondaAsync(
+            TRonda ronda, IReadOnlyCollection<TParticipanteRonda> participantes)
+        {
+            var resultado = new Respuesta<TRonda>();
+
+            try
+            {
+                if (ronda == null || participantes == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Faltan los datos de la ronda.";
+                    return resultado;
+                }
+
+                ronda.BandoGanador = string.IsNullOrWhiteSpace(ronda.BandoGanador)
+                    ? null
+                    : ronda.BandoGanador.Trim().ToUpperInvariant();
+
+                var partida = await _unidadDeTrabajo.TPartida.ObtenerEntidadAsync(
+                    x => x.IdPartida == ronda.IdPartida);
+
+                if (!partida.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = partida.Error;
+                    return resultado;
+                }
+
+                if (partida.Data == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Partida no encontrada.";
+                    return resultado;
+                }
+
+                // Un reintento del mismo nivel devuelve la ronda ya guardada
+                var rondaExistente = await _unidadDeTrabajo.TRonda.ObtenerEntidadAsync(
+                    x => x.IdPartida == ronda.IdPartida && x.IdNivel == ronda.IdNivel);
+
+                if (!rondaExistente.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = rondaExistente.Error;
+                    return resultado;
+                }
+
+                if (rondaExistente.Data != null)
+                {
+                    resultado.Data = _mapper.Map<TRonda>(rondaExistente.Data);
+                    return resultado;
+                }
+
+                if (partida.Data.Estado != EstadoEnCurso)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "La partida ya terminó; no admite más niveles.";
+                    return resultado;
+                }
+
+                var modo = ModosPartida.DesdeCodigo(partida.Data.Modo)!.Value;
+
+                var errorValidacion =
+                    ValidarRonda(ronda, partida.Data) ??
+                    ValidarParticipantes(participantes, modo);
+
+                if (errorValidacion != null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = errorValidacion;
+                    return resultado;
+                }
+
+                errorValidacion = await ValidarReferenciasRondaAsync(ronda, participantes);
+
+                if (errorValidacion != null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = errorValidacion;
+                    return resultado;
+                }
+
+                var entidad = _mapper.Map<Ronda>(ronda);
+                entidad.IdRonda = 0;
 
                 _unidadDeTrabajo.EmpezarTransaccion();
 
-                var respuestaPartida =
-                    await _unidadDeTrabajo.TPartida.InsertarAsync(entidad);
+                var respuestaRonda =
+                    await _unidadDeTrabajo.TRonda.InsertarAsync(entidad);
 
-                if (!respuestaPartida.Success || respuestaPartida.Data == null)
+                if (!respuestaRonda.Success || respuestaRonda.Data == null)
                 {
                     _unidadDeTrabajo.Rollback();
 
                     resultado.Success = false;
-                    resultado.Error = respuestaPartida.Error;
+                    resultado.Error = respuestaRonda.Error;
                     return resultado;
                 }
 
                 foreach (var participante in participantes)
                 {
                     var entidadParticipante =
-                        _mapper.Map<ParticipantePartida>(participante);
+                        _mapper.Map<ParticipanteRonda>(participante);
                     entidadParticipante.IdParticipante = 0;
-                    entidadParticipante.IdPartida = respuestaPartida.Data.IdPartida;
+                    entidadParticipante.IdRonda = respuestaRonda.Data.IdRonda;
 
                     var respuestaParticipante =
-                        await _unidadDeTrabajo.TParticipantePartida.InsertarAsync(
+                        await _unidadDeTrabajo.TParticipanteRonda.InsertarAsync(
                             entidadParticipante);
 
                     if (!respuestaParticipante.Success)
@@ -132,7 +250,7 @@ namespace PacmanLogicaNegocios.Implementacion
 
                 _unidadDeTrabajo.CompletarTran();
 
-                resultado.Data = _mapper.Map<TPartida>(respuestaPartida.Data);
+                resultado.Data = _mapper.Map<TRonda>(respuestaRonda.Data);
             }
             catch (Exception ex)
             {
@@ -140,8 +258,125 @@ namespace PacmanLogicaNegocios.Implementacion
 
                 _logger.LogError(
                     ex,
-                    "Error al guardar resultado de la sala {CodigoSala}",
-                    partida?.CodigoSala);
+                    "Error al guardar el nivel {IdNivel} de IdPartida {IdPartida}",
+                    ronda?.IdNivel,
+                    ronda?.IdPartida);
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
+        public async Task<Respuesta<TPartida>> FinalizarAsync(TPartida datos)
+        {
+            var resultado = new Respuesta<TPartida>();
+
+            try
+            {
+                if (datos == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Faltan los datos de la partida.";
+                    return resultado;
+                }
+
+                var estado = (datos.Estado ?? string.Empty).Trim().ToUpperInvariant();
+
+                if (estado != EstadoFinalizada && estado != EstadoAbandonada)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Estado no válido. Use FINALIZADA o ABANDONADA.";
+                    return resultado;
+                }
+
+                if (datos.FechaFin == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Falta la fecha de fin de la partida.";
+                    return resultado;
+                }
+
+                var partida = await _unidadDeTrabajo.TPartida.ObtenerEntidadAsync(
+                    x => x.IdPartida == datos.IdPartida);
+
+                if (!partida.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = partida.Error;
+                    return resultado;
+                }
+
+                if (partida.Data == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Partida no encontrada.";
+                    return resultado;
+                }
+
+                // Un reintento del mismo cierre devuelve la partida ya cerrada
+                if (partida.Data.Estado == estado)
+                {
+                    resultado.Data = _mapper.Map<TPartida>(partida.Data);
+                    return resultado;
+                }
+
+                if (partida.Data.Estado != EstadoEnCurso)
+                {
+                    resultado.Success = false;
+                    resultado.Error = $"La partida ya se cerró como {partida.Data.Estado}.";
+                    return resultado;
+                }
+
+                if (datos.FechaFin < partida.Data.FechaInicio)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "La fecha de fin no puede ser anterior a la de inicio.";
+                    return resultado;
+                }
+
+                if (estado == EstadoFinalizada)
+                {
+                    var rondas = await _unidadDeTrabajo.TRonda.ContarAsync(
+                        x => x.IdPartida == datos.IdPartida);
+
+                    if (!rondas.Success)
+                    {
+                        resultado.Success = false;
+                        resultado.Error = rondas.Error;
+                        return resultado;
+                    }
+
+                    if (rondas.Data == 0)
+                    {
+                        resultado.Success = false;
+                        resultado.Error = "Una partida finalizada debe tener al menos un nivel jugado.";
+                        return resultado;
+                    }
+                }
+
+                partida.Data.Estado = estado;
+                partida.Data.FechaFin = datos.FechaFin;
+
+                var respuestaRepositorio =
+                    await _unidadDeTrabajo.TPartida.ModificarAsync(partida.Data);
+
+                if (!respuestaRepositorio.Success || respuestaRepositorio.Data == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = respuestaRepositorio.Error;
+                    return resultado;
+                }
+
+                resultado.Data = _mapper.Map<TPartida>(respuestaRepositorio.Data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error al finalizar IdPartida {IdPartida}",
+                    datos?.IdPartida);
 
                 resultado.Success = false;
                 resultado.Error = ex.GetBaseException().Message;
@@ -191,10 +426,9 @@ namespace PacmanLogicaNegocios.Implementacion
             return resultado;
         }
 
-        public async Task<Respuesta<IEnumerable<TParticipantePartida>>> ListarParticipantesAsync(
-            int idPartida)
+        public async Task<Respuesta<IEnumerable<TRonda>>> ListarRondasAsync(int idPartida)
         {
-            var resultado = new Respuesta<IEnumerable<TParticipantePartida>>();
+            var resultado = new Respuesta<IEnumerable<TRonda>>();
 
             try
             {
@@ -217,7 +451,7 @@ namespace PacmanLogicaNegocios.Implementacion
                 }
 
                 var respuestaRepositorio =
-                    await _unidadDeTrabajo.TParticipantePartida.BuscarAsync(
+                    await _unidadDeTrabajo.TRonda.BuscarAsync(
                         x => x.IdPartida == idPartida);
 
                 if (!respuestaRepositorio.Success)
@@ -228,15 +462,14 @@ namespace PacmanLogicaNegocios.Implementacion
                 }
 
                 resultado.Data =
-                    _mapper.Map<IEnumerable<TParticipantePartida>>(
-                        respuestaRepositorio.Data)
-                    .OrderBy(x => x.IdPersonaje);
+                    _mapper.Map<IEnumerable<TRonda>>(respuestaRepositorio.Data)
+                    .OrderBy(x => x.FechaInicio);
             }
             catch (Exception ex)
             {
                 _logger.LogError(
                     ex,
-                    "Error al listar participantes de IdPartida {IdPartida}",
+                    "Error al listar rondas de IdPartida {IdPartida}",
                     idPartida);
 
                 resultado.Success = false;
@@ -246,115 +479,167 @@ namespace PacmanLogicaNegocios.Implementacion
             return resultado;
         }
 
-        private static string? ValidarPartida(TPartida partida)
+        public async Task<Respuesta<IEnumerable<TParticipanteRonda>>> ListarParticipantesAsync(
+            int idRonda)
         {
-            if (partida.Modo != ModoMultijugador && partida.Modo != ModoContraIa)
+            var resultado = new Respuesta<IEnumerable<TParticipanteRonda>>();
+
+            try
+            {
+                var rondaExistente =
+                    await _unidadDeTrabajo.TRonda.ContarAsync(
+                        x => x.IdRonda == idRonda);
+
+                if (!rondaExistente.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = rondaExistente.Error;
+                    return resultado;
+                }
+
+                if (rondaExistente.Data == 0)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Ronda no encontrada.";
+                    return resultado;
+                }
+
+                var respuestaRepositorio =
+                    await _unidadDeTrabajo.TParticipanteRonda.BuscarAsync(
+                        x => x.IdRonda == idRonda);
+
+                if (!respuestaRepositorio.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = respuestaRepositorio.Error;
+                    return resultado;
+                }
+
+                resultado.Data =
+                    _mapper.Map<IEnumerable<TParticipanteRonda>>(
+                        respuestaRepositorio.Data)
+                    .OrderBy(x => x.IdPersonaje);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error al listar participantes de IdRonda {IdRonda}",
+                    idRonda);
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
+        private static string? ValidarInicio(TPartida partida)
+        {
+            if (ModosPartida.DesdeCodigo(partida.Modo) == null)
                 return "Modo no válido. Use MULTIJUGADOR o CONTRA_IA.";
 
-            if (partida.Modo == ModoMultijugador && partida.CodigoSala == null)
-                return "Una partida multijugador requiere el código de sala.";
+            // También la partida contra la IA se inicia desde una sala
+            if (partida.CodigoSala.Length == 0)
+                return "Falta el código de sala.";
 
-            if (partida.Modo == ModoContraIa && partida.CodigoSala != null)
-                return "Una partida contra la IA no lleva código de sala.";
-
-            if (partida.CodigoSala?.Length > LargoMaximoCodigoSala)
+            if (partida.CodigoSala.Length > LargoMaximoCodigoSala)
                 return "El código de sala admite como máximo seis caracteres.";
 
-            // Solo se guardan partidas terminadas, nunca EN_CURSO
-            if (partida.Estado != EstadoFinalizada && partida.Estado != EstadoAbandonada)
-                return "Estado no válido. Use FINALIZADA o ABANDONADA.";
-
-            if (partida.Estado == EstadoFinalizada &&
-                !BandosValidos.Contains(partida.BandoGanador))
-                return "Una partida finalizada requiere el bando ganador: PACMAN o FANTASMAS.";
-
-            if (partida.Estado == EstadoAbandonada && partida.BandoGanador != null)
-                return "Una partida abandonada no tiene bando ganador.";
-
-            // La fecha de inicio la pone el motor: sirve para detectar reintentos
+            // La fecha de inicio la pone la sala: sirve para detectar reintentos
             if (partida.FechaInicio == default)
                 return "Falta la fecha de inicio de la partida.";
 
-            if (partida.FechaFin == null)
-                return "Falta la fecha de fin de la partida.";
+            return null;
+        }
 
-            if (partida.FechaFin < partida.FechaInicio)
-                return "La fecha de fin no puede ser anterior a la de inicio.";
+        private static string? ValidarRonda(TRonda ronda, Partida partida)
+        {
+            // null = ronda interrumpida, sin ganador
+            if (ronda.BandoGanador != null &&
+                CatalogoPersonajes.DesdeCodigo(ronda.BandoGanador) == null)
+                return "Bando ganador no válido. Use PACMAN o FANTASMA.";
+
+            if (ronda.FechaInicio == default)
+                return "Falta la fecha de inicio del nivel.";
+
+            if (ronda.FechaInicio < partida.FechaInicio)
+                return "El nivel no puede empezar antes que la partida.";
+
+            if (ronda.FechaFin < ronda.FechaInicio)
+                return "La fecha de fin del nivel no puede ser anterior a la de inicio.";
 
             return null;
         }
 
         private static string? ValidarParticipantes(
-            IReadOnlyCollection<TParticipantePartida> participantes)
+            IReadOnlyCollection<TParticipanteRonda> participantes, ModoPartida modo)
         {
-            if (participantes.Count == 0 ||
-                participantes.Count > CantidadMaximaParticipantes)
-                return $"La partida debe tener entre 1 y {CantidadMaximaParticipantes} participantes.";
-
             if (participantes.Any(x => x == null))
                 return "Hay un participante sin datos.";
+
+            if (participantes.Select(x => x.IdPersonaje).Distinct().Count() !=
+                participantes.Count)
+                return "Un personaje no puede repetirse en el mismo nivel.";
+
+            var pacmans = participantes.Count(x => CatalogoPersonajes.EsPacMan(x.IdPersonaje));
+            var fantasmas = participantes.Count(x => CatalogoPersonajes.EsFantasma(x.IdPersonaje));
+
+            if (pacmans + fantasmas != participantes.Count)
+                return "Uno de los personajes no existe.";
+
+            var pacmansEsperados = modo == ModoPartida.ContraIa
+                ? ConfiguracionPartida.CantidadPacManContraIa
+                : ConfiguracionPartida.CantidadPacMan;
+
+            if (pacmans != pacmansEsperados ||
+                fantasmas != ConfiguracionPartida.CantidadFantasmas)
+                return $"El nivel debe tener {pacmansEsperados} Pac-Man y " +
+                       $"{ConfiguracionPartida.CantidadFantasmas} fantasmas.";
 
             if (participantes.Any(x => x.EsIa != (x.IdUsuario == null)))
                 return "La IA no tiene usuario y cada jugador humano debe tenerlo.";
 
-            if (!participantes.Any(x => !x.EsIa))
-                return "La partida debe tener al menos un jugador humano.";
+            if (participantes.Any(x => x.EsIa && x.Abandono))
+                return "Solo un jugador humano puede abandonar.";
 
-            if (participantes.Select(x => x.IdPersonaje).Distinct().Count() !=
-                participantes.Count)
-                return "Un personaje no puede repetirse en la misma partida.";
+            var humanos = participantes.Where(x => !x.EsIa).ToList();
 
-            var usuarios = participantes
-                .Where(x => x.IdUsuario != null)
-                .Select(x => x.IdUsuario)
-                .ToList();
+            if (modo == ModoPartida.ContraIa && humanos.Count != 1)
+                return "Contra la IA juega un solo humano.";
 
-            if (usuarios.Distinct().Count() != usuarios.Count)
-                return "Un usuario no puede aparecer dos veces en la misma partida.";
+            if (humanos.Count == 0 || humanos.Count > ConfiguracionPartida.CantidadMaximaHumanos)
+                return $"El nivel debe tener entre 1 y {ConfiguracionPartida.CantidadMaximaHumanos} jugadores humanos.";
+
+            if (modo == ModoPartida.Multijugador &&
+                humanos.Count(x => CatalogoPersonajes.EsFantasma(x.IdPersonaje)) >
+                    ConfiguracionPartida.CantidadMaximaFantasmasHumanos)
+                return "Como máximo 2 fantasmas pueden ser humanos.";
+
+            if (humanos.Select(x => x.IdUsuario).Distinct().Count() != humanos.Count)
+                return "Un usuario no puede aparecer dos veces en el mismo nivel.";
 
             if (participantes.Any(x =>
                 x.Puntuacion < 0 ||
                 x.FantasmasComidos < 0 ||
                 x.PacmansAtrapados < 0 ||
-                x.FrutasComidas < 0))
+                x.ObjetosUsados < 0))
                 return "Las estadísticas de los participantes no pueden ser negativas.";
 
             return null;
         }
 
-        private async Task<string?> ValidarReferenciasAsync(
-            TPartida partida, IReadOnlyCollection<TParticipantePartida> participantes)
+        private async Task<string?> ValidarReferenciasRondaAsync(
+            TRonda ronda, IReadOnlyCollection<TParticipanteRonda> participantes)
         {
-            var dificultad = await _unidadDeTrabajo.TDificultad.ContarAsync(
-                x => x.IdDificultad == partida.IdDificultad);
-
-            if (!dificultad.Success)
-                return dificultad.Error;
-
-            if (dificultad.Data == 0)
-                return "Dificultad no encontrada.";
-
             var nivel = await _unidadDeTrabajo.TNivel.ContarAsync(
-                x => x.IdNivel == partida.IdNivelAlcanzado);
+                x => x.IdNivel == ronda.IdNivel);
 
             if (!nivel.Success)
                 return nivel.Error;
 
             if (nivel.Data == 0)
                 return "Nivel no encontrado.";
-
-            var idsPersonajes = participantes
-                .Select(x => x.IdPersonaje)
-                .ToList();
-
-            var personajes = await _unidadDeTrabajo.TPersonaje.ContarAsync(
-                x => idsPersonajes.Contains(x.IdPersonaje));
-
-            if (!personajes.Success)
-                return personajes.Error;
-
-            if (personajes.Data != idsPersonajes.Count)
-                return "Uno de los personajes no existe.";
 
             var idsUsuarios = participantes
                 .Where(x => x.IdUsuario != null)
@@ -371,36 +656,6 @@ namespace PacmanLogicaNegocios.Implementacion
                 return "Uno de los usuarios no existe.";
 
             return null;
-        }
-
-        private async Task<Respuesta<Partida>> BuscarPartidaGuardadaAsync(
-            TPartida partida, IReadOnlyCollection<TParticipantePartida> participantes)
-        {
-            var candidatas = await _unidadDeTrabajo.TPartida.BuscarAsync(
-                x => x.Modo == partida.Modo &&
-                     x.CodigoSala == partida.CodigoSala &&
-                     x.FechaInicio == partida.FechaInicio,
-                [nameof(Partida.ParticipantesPartida)]);
-
-            if (!candidatas.Success)
-                return Respuesta<Partida>.Fail(candidatas.Error);
-
-            // Sin código de sala (CONTRA_IA) también deben coincidir los jugadores
-            var idsUsuarios = participantes
-                .Where(x => x.IdUsuario != null)
-                .Select(x => x.IdUsuario)
-                .ToHashSet();
-
-            return new Respuesta<Partida>
-            {
-                Data = (candidatas.Data ?? []).FirstOrDefault(x =>
-                    partida.CodigoSala != null ||
-                    x.ParticipantesPartida
-                        .Where(p => p.IdUsuario != null)
-                        .Select(p => p.IdUsuario)
-                        .ToHashSet()
-                        .SetEquals(idsUsuarios))
-            };
         }
     }
 }

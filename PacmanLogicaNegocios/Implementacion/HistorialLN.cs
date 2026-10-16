@@ -63,6 +63,58 @@ namespace PacmanLogicaNegocios.Implementacion
             return resultado;
         }
 
+        public async Task<Respuesta<IEnumerable<HistorialRonda>>> ListarRondasAsync(
+            int idUsuario, int idPartida)
+        {
+            var resultado = new Respuesta<IEnumerable<HistorialRonda>>();
+
+            try
+            {
+                if (idUsuario <= 0)
+                {
+                    resultado.Success = false;
+                    resultado.Error = ErrorUsuario;
+                    return resultado;
+                }
+
+                // Filtrar también por usuario: solo ve el detalle de sus partidas
+                var respuestaRepositorio =
+                    await _unidadDeTrabajo.VHistorialRondas.BuscarAsync(
+                        x => x.IdUsuario == idUsuario && x.IdPartida == idPartida);
+
+                if (!respuestaRepositorio.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = respuestaRepositorio.Error;
+                    return resultado;
+                }
+
+                var rondas = (respuestaRepositorio.Data ?? []).ToList();
+
+                if (rondas.Count == 0)
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Partida no encontrada en el historial del usuario.";
+                    return resultado;
+                }
+
+                resultado.Data = rondas.OrderBy(x => x.NumeroNivel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error al listar niveles de IdPartida {IdPartida} del IdUsuario {IdUsuario}",
+                    idPartida,
+                    idUsuario);
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
         public async Task<Respuesta<ProgresoJugador>> ObtenerProgresoAsync(int idUsuario)
         {
             var resultado = new Respuesta<ProgresoJugador>();
