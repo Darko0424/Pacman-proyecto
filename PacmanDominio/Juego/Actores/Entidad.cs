@@ -1,3 +1,4 @@
+using PacmanDominio.Juego.Interfaces;
 using PacmanDominio.Juego.Mapa;
 
 namespace PacmanDominio.Juego.Actores;
@@ -12,6 +13,12 @@ public abstract class Entidad
     public int? IdUsuario { get; }
 
     public Casilla Posicion { get; private set; }
+
+    // Hacia dónde avanza (Ninguna = detenido) y qué fracción del camino hacia la
+    // siguiente casilla lleva, de 0 a 1. Sirven al cliente para interpolar.
+    public Direccion Direccion { get; private set; }
+    public double Avance { get; private set; }
+
     public int VidasRestantes { get; private set; }
     public bool ReaparicionPendiente { get; private set; }
 
@@ -99,6 +106,12 @@ public abstract class Entidad
         Posicion = destino;
     }
 
+    internal void ActualizarDesplazamiento(Direccion direccion, double avance)
+    {
+        Direccion = direccion;
+        Avance = avance;
+    }
+
     internal bool PerderVida(TimeSpan tiempoSimulacion)
     {
         if (!PuedeParticipar || EsInvencible(tiempoSimulacion))
@@ -121,6 +134,7 @@ public abstract class Entidad
         }
 
         CambiarPosicion(destino);
+        ActualizarDesplazamiento(Direccion.Ninguna, 0);
         InvencibleHasta = tiempoSimulacion +
             ConfiguracionPartida.DuracionInvencibilidadReaparicion;
         ReaparicionPendiente = false;

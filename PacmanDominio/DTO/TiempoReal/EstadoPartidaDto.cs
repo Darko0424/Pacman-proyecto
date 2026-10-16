@@ -1,5 +1,6 @@
 using PacmanDominio.Juego;
 using PacmanDominio.Juego.Actores;
+using PacmanDominio.Juego.Interfaces;
 using PacmanDominio.Juego.Items;
 using PacmanDominio.Juego.Salas;
 
@@ -29,9 +30,13 @@ public sealed class EstadoPartidaDto
 
     public IReadOnlyList<EfectoDto> Efectos { get; init; } = Array.Empty<EfectoDto>();
 
+    // Lo que pasó desde el estado anterior (sonidos y animaciones)
+    public IReadOnlyList<EventoDto> Eventos { get; init; } = Array.Empty<EventoDto>();
+
     // La sala es opcional para simulaciones locales. Si se incluye, debe poseer este estado.
     // El gestor toma la instantánea dentro de la misma secuencia de acciones de la partida.
-    public static EstadoPartidaDto Crear(EstadoPartida partida, Sala? sala = null)
+    public static EstadoPartidaDto Crear(
+        EstadoPartida partida, Sala? sala = null, IEnumerable<EventoJuego>? eventos = null)
     {
         ArgumentNullException.ThrowIfNull(partida);
 
@@ -66,6 +71,8 @@ public sealed class EstadoPartidaDto
                     ControlIa = pacman.ControlIa,
                     Fila = pacman.Posicion.Fila,
                     Columna = pacman.Posicion.Columna,
+                    Direccion = pacman.Direccion,
+                    Avance = pacman.Avance,
                     VidasRestantes = pacman.VidasRestantes,
                     Eliminado = pacman.Eliminado,
                     ReaparicionPendiente = pacman.ReaparicionPendiente,
@@ -85,6 +92,8 @@ public sealed class EstadoPartidaDto
                     ControlIa = fantasma.ControlIa,
                     Fila = fantasma.Posicion.Fila,
                     Columna = fantasma.Posicion.Columna,
+                    Direccion = fantasma.Direccion,
+                    Avance = fantasma.Avance,
                     VidasRestantes = fantasma.VidasRestantes,
                     Eliminado = fantasma.Eliminado,
                     ReaparicionPendiente = fantasma.ReaparicionPendiente,
@@ -117,6 +126,18 @@ public sealed class EstadoPartidaDto
                     FinSegundos = efecto.Fin.TotalSeconds
                 })
                 .ToList()
+                .AsReadOnly(),
+            Eventos = (eventos ?? Enumerable.Empty<EventoJuego>())
+                .Select(evento => new EventoDto
+                {
+                    Tipo = evento.Tipo,
+                    IdPersonaje = evento.IdPersonaje,
+                    IdOtroPersonaje = evento.IdOtroPersonaje,
+                    Fila = evento.Fila,
+                    Columna = evento.Columna,
+                    IdObjeto = evento.IdObjeto
+                })
+                .ToList()
                 .AsReadOnly()
         };
     }
@@ -142,6 +163,8 @@ public sealed class PacManDto
     public bool ControlIa { get; init; }
     public int Fila { get; init; }
     public int Columna { get; init; }
+    public Direccion Direccion { get; init; }
+    public double Avance { get; init; }
     public int VidasRestantes { get; init; }
     public bool Eliminado { get; init; }
     public bool ReaparicionPendiente { get; init; }
@@ -159,6 +182,8 @@ public sealed class FantasmaDto
     public bool ControlIa { get; init; }
     public int Fila { get; init; }
     public int Columna { get; init; }
+    public Direccion Direccion { get; init; }
+    public double Avance { get; init; }
     public int VidasRestantes { get; init; }
     public bool Eliminado { get; init; }
     public bool ReaparicionPendiente { get; init; }
@@ -184,4 +209,14 @@ public sealed class EfectoDto
     public byte IdPersonajeOrigen { get; init; }
     public Bando BandoOrigen { get; init; }
     public double FinSegundos { get; init; }
+}
+
+public sealed class EventoDto
+{
+    public TipoEventoJuego Tipo { get; init; }
+    public byte? IdPersonaje { get; init; }
+    public byte? IdOtroPersonaje { get; init; }
+    public int? Fila { get; init; }
+    public int? Columna { get; init; }
+    public byte? IdObjeto { get; init; }
 }

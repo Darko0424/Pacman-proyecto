@@ -1,4 +1,5 @@
 using PacmanDominio.Juego.Actores;
+using PacmanDominio.Juego.Interfaces;
 using PacmanDominio.Juego.Items;
 using PacmanDominio.Juego.Mapa;
 
@@ -21,6 +22,9 @@ public sealed class EstadoPartida
     public IReadOnlyList<EfectoActivo> EfectosActivos { get; }
     public TimeSpan TiempoSimulacion { get; private set; }
     public string? CodigoSala { get; private set; }
+
+    // Puntos extra del bando ganador; se otorgan una sola vez al terminar el nivel
+    public bool BonificacionOtorgada { get; private set; }
 
     public IEnumerable<Entidad> Actores
     {
@@ -174,6 +178,72 @@ public sealed class EstadoPartida
         actor.CambiarPosicion(Laberinto.ObtenerCasilla(fila, columna));
 
         return true;
+    }
+
+    // Dirección en la que avanza y fracción recorrida hacia la siguiente casilla.
+    // La dirección debe llevar a una casilla transitable (o ser Ninguna).
+    public bool ActualizarDesplazamiento(byte idPersonaje, Direccion direccion, double avance)
+    {
+        var actor = ObtenerActor(idPersonaje);
+
+        if (!Enum.IsDefined(direccion) || double.IsNaN(avance) || avance < 0 || avance >= 1)
+        {
+            return false;
+        }
+
+        if (direccion == Direccion.Ninguna)
+        {
+            avance = 0;
+        }
+        else
+        {
+            var (fila, columna) = Desplazar(actor.Posicion, direccion);
+
+            if (!Laberinto.EsTransitable(fila, columna))
+            {
+                return false;
+            }
+        }
+
+        actor.ActualizarDesplazamiento(direccion, avance);
+
+        return true;
+    }
+
+    // Una vez terminado el nivel: suma los puntos a todos los del bando ganador
+    public bool OtorgarBonificacion(int puntos)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(puntos);
+
+        var ganador = BandoGanador;
+
+        if (!ganador.HasValue || BonificacionOtorgada)
+        {
+            return false;
+        }
+
+        foreach (var actor in Actores.Where(actor => actor.Bando == ganador))
+        {
+            actor.SumarPuntos(puntos);
+        }
+
+        BonificacionOtorgada = true;
+
+        return true;
+    }
+
+    public static (int Fila, int Columna) Desplazar(Casilla origen, Direccion direccion)
+    {
+        ArgumentNullException.ThrowIfNull(origen);
+
+        return direccion switch
+        {
+            Direccion.Arriba => (origen.Fila - 1, origen.Columna),
+            Direccion.Abajo => (origen.Fila + 1, origen.Columna),
+            Direccion.Izquierda => (origen.Fila, origen.Columna - 1),
+            Direccion.Derecha => (origen.Fila, origen.Columna + 1),
+            _ => (origen.Fila, origen.Columna)
+        };
     }
 
     // Pac-Man atrapado o fantasma comido: pierde una vida y queda pendiente de reaparecer

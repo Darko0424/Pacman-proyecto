@@ -121,6 +121,97 @@ El parche de niveles se ejecuta en una transacción y se puede repetir:
 - Los demás JSON incompletos requieren revisión explícita; no se sustituyen por
   aproximación. Los otros catálogos mantienen su inserción de filas faltantes.
 
-Quedan fuera de esta carga el motor, movimiento, IA, efectos, selección segura de
-reaparición y avance automático entre niveles. La ubicación inicial separada y los
-seis candidatos de reaparición no sustituyen esas reglas de ejecución.
+El movimiento, la IA, los efectos, la reaparición segura y el fin de cada nivel están
+en el motor del juego (sección siguiente).
+
+
+## Motor del juego
+
+El motor está en `PacmanLogicaNegocios/Juego`. Solo hace falta usar `MotorPartida`;
+los sistemas (`Sistemas/`), la IA (`IA/`, `Controladores/`) y los efectos (`Efectos/`)
+son internos. Simula un nivel en ticks fijos de 50 ms y es determinista si se le pasa
+una semilla (útil para pruebas).
+
+### Reglas implementadas
+
+- **Movimiento por casillas.** Cada personaje acumula avance según su velocidad y pasa
+  a la siguiente casilla al completar 1. Solo gira al llegar a una casilla; la última
+  dirección recibida se guarda (como en el clásico, gira en cuanto puede).
+- **Velocidad.** Pac-Man 6 casillas/s (87 % mientras come) y fantasmas 5.6; la
+  dificultad (`multiplicador_velocidad_ia`) solo cambia a los fantasmas que mueve la
+  IA; asustados van a la mitad; aturdidos o congelados no se mueven.
+- **Pac-Man contra fantasma.** El fantasma lo atrapa (+300) y Pac-Man pierde una vida.
+  Con el fantasma asustado, Pac-Man se lo come (+200) y el fantasma pierde una vida.
+  Nadie pierde vidas mientras es invencible (3 s tras reaparecer) o tiene escudo.
+- **Reaparición.** A los 2 s, en el punto de reaparición libre más alejado de los rivales.
+- **Explosión entre fantasmas.** Quedan aturdidos 2 s y vuelven a puntos de
+  reaparición distintos, sin perder vidas.
+- **Rebote entre Pac-Man.** Si la sala lo tiene activado, regresan a su casilla y dan
+  la vuelta; si no, se atraviesan.
+- **Bolas.** Normal +10, de poder +50: asusta a los fantasmas durante
+  `duracion_asustado_seg` de la dificultad.
+- **Cajas y objetos.** Aparecen en los `puntosCajas` según la frecuencia de la sala
+  (baja 20 s, normal 12 s, alta 6 s). Quien pisa una con el espacio libre recibe un
+  objeto al azar de su bando; se usa con el botón de acción.
+- **Fin del nivel.** Cuando un bando gana; cada integrante del bando ganador recibe +500.
+- **IA.** Fantasmas clásicos (Blinky persigue, Pinky embosca 4 casillas adelante, Inky
+  encierra con Blinky) que alternan dispersión y persecución y evitan chocar entre sí.
+  La IA de Pac-Man come bolas, huye de los fantasmas cercanos y persigue a los
+  asustados. La IA usa su objeto cuando tiene un rival a 6 casillas o menos. También
+  mueve a los humanos desconectados o que se fueron (`Entidad.ControlIa`).
+
+Todos los valores están en `ReglasJuego.cs` para ajustarlos sin tocar la lógica.
+
+### Objetos (provisionales)
+
+| Objeto | Bando | Efecto | Clase |
+| --- | --- | --- | --- |
+| Turbo | Pac-Man | `VELOCIDAD`: quien lo usa va 1.5 veces más rápido | `EfectoVelocidad` |
+| Escudo | Pac-Man | `ESCUDO`: no puede ser atrapado | `EfectoEscudo` |
+| Impulso | Fantasma | `VELOCIDAD` | `EfectoVelocidad` |
+| Hielo | Fantasma | `CONGELAR`: el bando rival queda inmóvil | `EfectoCongelar` |
+
+Para agregar un objeto: una clase que implemente `IEfectoObjeto` (solo los métodos
+que use: `MultiplicadorVelocidad`, `Protege`, `Aplicar`, `Retirar`), agregarla a
+`MotorPartida.EfectosPredeterminados` y agregar su fila a `objetos` con la clave en
+`efecto`. Los objetos cuyo efecto no tiene clase se ignoran.
+
+### Uso desde el gestor de salas 
+
+El motor no es seguro para varios hilos: todas las llamadas de una sala deben ir
+serializadas (por ejemplo, con el mismo candado o canal que protege la `Sala`).
+
+1. **Iniciar la serie.** Con `INivelLN` y `SistemaNiveles.Cargar` se carga el nivel 1.
+   `AsignadorPersonajes` sortea los roles:
+   - con 1 jugador el modo es contra la IA: 1 Pac-Man (el personaje 1) y los 3
+     fantasmas; el jugador toma su `RolPreferido` o uno al azar;
+   - con 2 a 4 jugadores, los humanos se sortean entre los personajes 1 a 4 y el resto
+     (siempre incluido el 5) es IA.
+
+   Con eso se construye el `EstadoPartida` (las vidas salen de `sala.Configuracion`) y
+   se llama a `sala.IniciarPartida`. Después: `PartidaLN.IniciarAsync`,
+   `sala.RegistrarIdPartida`,
+   `new MotorPartida(nivel, dificultad, tNivel.VelocidadBase, objetos)` y
+   `NotificarNivelAsync(NivelDto.Crear(nivel))`.
+2. **Cada tick** (un `PeriodicTimer` de 50 ms basta):
+   `var eventos = motor.Avanzar(transcurrido);` y
+   `NotificarEstadoAsync(EstadoPartidaDto.Crear(nivel, sala, eventos))`.
+3. **Controles.** `EnviarDireccionAsync` → `motor.RecibirDireccion(idPersonaje, dir)`;
+   `UsarObjetoAsync` → `motor.SolicitarUsarObjeto(idPersonaje)`. El personaje del
+   usuario sale de `nivel.ObtenerActorDeUsuario(idUsuario)`.
+4. **Fin del nivel** (`motor.NivelTerminado`):
+   `PartidaLN.GuardarRondaAsync(motor.CrearRonda(...), motor.ObtenerParticipantes())`
+   y `sala.TerminarNivel()`.
+   - Si la sala queda en `Transicion`: esperar `ReglasJuego.DuracionTransicion`,
+     sortear roles de nuevo (contra la IA se conserva `sala.RolContraIa`), llamar a
+     `sala.IniciarSiguienteNivel` y crear un motor nuevo.
+   - Si queda `Finalizada`: `PartidaLN.FinalizarAsync` con `FINALIZADA`.
+5. **Desconexiones.** `sala.Desconectar`, `Reconectar` y `Salir` ya ceden o devuelven
+   el control a la IA; el motor lo detecta solo. Si todos se van, la sala queda
+   `Finalizada`: guardar la ronda en curso (queda sin ganador) y cerrar la partida
+   como `ABANDONADA`.
+
+Para el cliente, `EstadoPartidaDto` trae `Direccion` y `Avance` de cada personaje
+(para interpolar entre ticks) y `Eventos` (`TipoEventoJuego`) para sonidos y
+animaciones: bola comida, fantasma comido, Pac-Man atrapado, explosión, rebote,
+reaparición, caja, objeto usado y fin del nivel.
