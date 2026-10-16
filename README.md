@@ -215,3 +215,152 @@ Para el cliente, `EstadoPartidaDto` trae `Direccion` y `Avance` de cada personaj
 (para interpolar entre ticks) y `Eventos` (`TipoEventoJuego`) para sonidos y
 animaciones: bola comida, fantasma comido, Pac-Man atrapado, explosión, rebote,
 reaparición, caja, objeto usado y fin del nivel.
+
+## Gestor de salas
+
+`GestorSalas` implementa `IGestorSalas` en
+`PacmanLogicaNegocios/Juego/Salas/`. Se comparte durante la vida del servidor:
+conserva hasta cinco salas en memoria y reserva cada usuario y conexión en una
+sola sala. Una desconexión conserva la plaza; una salida voluntaria la libera.
+La conexión anterior deja de servir después de reconectar.
+
+El primer jugador es el anfitrión. En el lobby puede configurar la dificultad,
+vidas, rebote y frecuencia de cajas. Cada jugador puede elegir su preferencia
+para jugar solo. `AsignadorPersonajes` aplica los sorteos de la sección anterior,
+rellena con IA y vuelve a sortear al cambiar de nivel. Si un multijugador queda
+con un solo humano, conserva el modo multijugador; contra IA se conserva el bando.
+
+El nivel se busca por `Numero` en `INivelLN.ListarAsync`; nunca se supone que
+`IdNivel` coincide con ese número. El convertidor requiere los JSON versión 2 del
+catálogo actual. Cada nivel de cada sala tiene casillas, bolas, actores, dificultad,
+objetos y motor propios; las vidas salen de `Sala.Configuracion`.
+
+### Inicio y persistencia
+
+El gestor carga y valida los datos y prepara un motor sobre una copia del lobby.
+Esa copia usa las operaciones de `Sala` para aceptar el primer nivel. Solo se
+publica como sala en juego después de que `IPartidaLN.IniciarAsync` confirma el
+identificador y `RegistrarIdPartida` lo acepta. Así un fallo de carga o de guardado
+no deja visible una partida sin motor o sin identificador.
+
+Si el inicio queda pendiente, se conservan el sorteo y la fecha de inicio. Hasta
+confirmarlo no se admiten ingresos ni cambios de configuración o preferencia; las
+salidas, desconexiones y reconexiones siguen aplicándose también a la copia
+preparada. Incluso si todos salen durante un inicio de resultado incierto, el
+gestor recupera su identificador, guarda la interrupción y cierra como `ABANDONADA`.
+
+Al terminar un nivel, primero se guarda la ronda con sus participantes. Solo al
+confirmarla se llama a `TerminarNivel`; los cinco segundos de transición empiezan
+entonces. Si falta el próximo nivel o falla su carga, la sala permanece en transición.
+Los guardados fallidos se reintentan una vez por segundo sin cambiar sus fechas o
+claves. Un reintento confirmado no vuelve a guardar rondas anteriores ni crea otra
+serie. Terminar el nivel cinco determina `FINALIZADA`, incluso si el último humano
+sale mientras todavía se reintenta guardar ese resultado.
+
+Si todos salen antes de completar la serie, se guarda el nivel en curso sin ganador
+y se cierra como `ABANDONADA`. Durante una transición se conserva la ronda ya
+terminada, sin inventar otra. Una sala vacía de lobby se retira inmediatamente;
+una sala vacía con resultados pendientes se retira después de confirmarlos. Las
+salas finalizadas admiten salidas y conservan su capacidad hasta quedar vacías.
+No hay expiración automática de jugadores desconectados.
+
+### Ciclo y concurrencia
+
+Al crear cada sala empieza una tarea propia con `PeriodicTimer` de 50 ms. El tiempo
+transcurrido procede de `TimeProvider.GetTimestamp`, y el motor lo descompone en
+sus ticks fijos. `TimeProvider` es inyectable para pruebas; por defecto es el del
+sistema. No hace falta que el adaptador de red llame al motor ni que avance el reloj.
+
+Todas las operaciones de una sala, sus controles, cargas, guardados y notificaciones
+pasan por la misma compuerta. El candado de índices globales solo cubre operaciones
+breves y nunca espera una compuerta ni servicios externos. Una consulta, guardado
+o notificación lenta retiene su sala, pero las otras siguen ejecutándose.
+
+Se envían instantáneas `SalaDto`, `NivelDto` y `EstadoPartidaDto`. Los fallos de
+notificación se registran y se reintentan con los indicadores pendientes; no
+deshacen el juego ni repiten la persistencia. El ciclo permanece mientras exista
+la sala, también después de finalizar la serie, para reenviar avisos finales y
+cambios de jugadores. En esa fase no se avanza el motor ni se repiten guardados.
+Al retirar la sala se dispone su temporizador y termina su tarea.
+
+Al reconectar se envían sala, mapa y estado a la conexión nueva. También se pueden
+consultar con `ObtenerAsync`, `ObtenerNivelAsync` y `ObtenerEstadoAsync`. Los eventos
+son avisos del transporte, sin acuse de recibo ni garantía de entrega exactamente
+una vez; un cliente debe poder recuperar su estado mediante las instantáneas.
+
+`DisposeAsync` cierra la admisión, cancela las esperas, dispone los temporizadores,
+espera las tareas y las operaciones activas y guarda las series interrumpidas como
+abandonadas. El cierre es idempotente; si no puede confirmar algún resultado, termina
+sus recursos y devuelve `AggregateException`, además de registrarlo. Los contratos
+de datos/notificación no reciben cancelación: una llamada ya iniciada debe terminar
+para poder liberar su ámbito con seguridad. Los reintentos y las salas son memoria
+del proceso; no hay recuperación automática tras un cierre abrupto del servidor.
+
+### Dependencias y composición pendiente
+
+El constructor recibe `IServiceScopeFactory`, `INotificadorJuego`,
+`ILogger<GestorSalas>` y, opcionalmente, `TimeProvider`. Cada operación de catálogos
+o persistencia abre y dispone un ámbito corto. Los servicios `INivelLN`,
+`IDificultadLN`, `IObjetoLN` e `IPartidaLN` conservan su registro `scoped` actual;
+el gestor no captura servicios de datos ni comparte un `DbContext` entre salas.
+
+Cuando exista el adaptador real, registrar `INotificadorJuego` con una implementación
+que pueda atender distintas salas concurrentemente, por ejemplo un singleton que
+use `IHubContext`. Después se puede agregar esta composición en `PacmanApi/Program.cs`:
+
+```csharp
+using PacmanDominio.InterfazLN;
+using PacmanLogicaNegocios.Juego.Salas;
+
+// Antes: registrar la implementación real de INotificadorJuego.
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+builder.Services.AddSingleton<GestorSalas>();
+builder.Services.AddSingleton<IGestorSalas>(proveedor =>
+    proveedor.GetRequiredService<GestorSalas>());
+builder.Services.AddHostedService<ParadaGestorSalas>();
+```
+
+El adaptador de parada debe vivir en la API, donde ya está disponible Hosting.
+Este ejemplo forma parte de la composición futura; todavía no se agrega al arranque:
+
+```csharp
+using Microsoft.Extensions.Hosting;
+using PacmanLogicaNegocios.Juego.Salas;
+
+public sealed class ParadaGestorSalas : IHostedService
+{
+    private readonly GestorSalas _gestor;
+
+    public ParadaGestorSalas(GestorSalas gestor)
+    {
+        _gestor = gestor;
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        await _gestor.DisposeAsync();
+    }
+}
+```
+
+La parada debe ocurrir en `IHostedService.StopAsync`, **antes** de disponer el
+proveedor DI. Esperar solamente al `DisposeAsync` del contenedor es demasiado tarde
+para crear los ámbitos que guardan resultados. La disposición posterior de DI
+reutiliza el mismo cierre idempotente. El adaptador de red debe dejar de admitir
+solicitudes durante esa parada; las llamadas tardías reciben una respuesta fallida.
+
+No registrar el gestor como `scoped` o `transient`: cada solicitud obtendría salas
+distintas. Los futuros métodos del hub reciben el gestor y le entregan identidades
+ya validadas, dirección o botón de objeto; no reciben posiciones ni estados de juego
+para aplicarlos al dominio.
+
+`JuegoHub.cs` y `NotificadorJuego.cs` siguen pendientes. El gestor no se registra
+todavía en la API ni se agrega un notificador vacío: la integración de celulares,
+grupos SignalR y autenticación queda en el adaptador posterior. Las comprobaciones
+del gestor utilizan dobles de catálogos, persistencia y notificación fuera de la
+solución, con los cinco JSON V2 del SQL; no migran ni escriben la base de datos.

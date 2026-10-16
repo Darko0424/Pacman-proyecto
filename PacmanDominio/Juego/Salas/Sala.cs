@@ -158,7 +158,8 @@ public sealed class Sala
     {
         var jugador = BuscarJugador(idUsuario);
 
-        if (jugador == null || Estado == EstadoSala.Finalizada)
+        // También permite vaciar una sala finalizada y liberar su capacidad.
+        if (jugador == null)
         {
             return false;
         }
