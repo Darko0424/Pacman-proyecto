@@ -296,71 +296,82 @@ de datos/notificación no reciben cancelación: una llamada ya iniciada debe ter
 para poder liberar su ámbito con seguridad. Los reintentos y las salas son memoria
 del proceso; no hay recuperación automática tras un cierre abrupto del servidor.
 
-### Dependencias y composición pendiente
+### Dependencias y composición
 
 El constructor recibe `IServiceScopeFactory`, `INotificadorJuego`,
 `ILogger<GestorSalas>` y, opcionalmente, `TimeProvider`. Cada operación de catálogos
 o persistencia abre y dispone un ámbito corto. Los servicios `INivelLN`,
-`IDificultadLN`, `IObjetoLN` e `IPartidaLN` conservan su registro `scoped` actual;
+`IDificultadLN`, `IObjetoLN` e `IPartidaLN` conservan su registro `scoped`;
 el gestor no captura servicios de datos ni comparte un `DbContext` entre salas.
 
-Cuando exista el adaptador real, registrar `INotificadorJuego` con una implementación
-que pueda atender distintas salas concurrentemente, por ejemplo un singleton que
-use `IHubContext`. Después se puede agregar esta composición en `PacmanApi/Program.cs`:
+En `PacmanApi/Program.cs` el gestor y el notificador (`Hubs/NotificadorJuego.cs`,
+sobre `IHubContext`) se registran como **singleton**: como `scoped` o `transient`
+cada solicitud obtendría salas distintas. `Servicios/ParadaGestorSalas.cs` cierra
+el gestor en `IHostedService.StopAsync`, **antes** de disponer el proveedor DI,
+porque después ya no se pueden crear los ámbitos que guardan las series
+interrumpidas.
 
-```csharp
-using PacmanDominio.InterfazLN;
-using PacmanLogicaNegocios.Juego.Salas;
+## Tiempo real (SignalR)
 
-// Antes: registrar la implementación real de INotificadorJuego.
-builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
-builder.Services.AddSingleton<GestorSalas>();
-builder.Services.AddSingleton<IGestorSalas>(proveedor =>
-    proveedor.GetRequiredService<GestorSalas>());
-builder.Services.AddHostedService<ParadaGestorSalas>();
+El hub está en `/hubs/juego` (`PacmanApi/Hubs/JuegoHub.cs`). Solo recibe intenciones
+(dirección y botón de acción) con la identidad ya validada; nunca posiciones ni
+estados. Cada método responde con el mismo `Respuesta<T>` de la API REST
+(`success`, `data`, `error`). Los JSON van en camelCase y los enums como número.
+
+### Conexión
+
+Se necesita el token de `api/Usuario/IniciarSesion`. Con `@microsoft/signalr`:
+
+```ts
+const conexion = new signalR.HubConnectionBuilder()
+    .withUrl(`${servidor}/hubs/juego`, { accessTokenFactory: () => token })
+    .withAutomaticReconnect()
+    .build();
 ```
 
-El adaptador de parada debe vivir en la API, donde ya está disponible Hosting.
-Este ejemplo forma parte de la composición futura; todavía no se agrega al arranque:
+En WebSockets el navegador no permite encabezados, así que el cliente envía el token
+como `?access_token=`. `Seguridad/AutenticacionSesion.cs` lo acepta solo en `/hubs`.
+Sin token o con uno vencido, la conexión responde 401.
 
-```csharp
-using Microsoft.Extensions.Hosting;
-using PacmanLogicaNegocios.Juego.Salas;
+### Métodos (cliente → servidor)
 
-public sealed class ParadaGestorSalas : IHostedService
-{
-    private readonly GestorSalas _gestor;
+| Método | Parámetros | Respuesta | Notas |
+| --- | --- | --- | --- |
+| `ListarSalas` | — | `SalaDto[]` | Para la lista de salas |
+| `CrearSala` | — | `SalaDto` | Quien la crea es el anfitrión. Máximo 5 salas |
+| `UnirseSala` | `codigo` | `SalaDto` | Solo en el lobby, máximo 4 jugadores |
+| `SalirSala` | `codigo` | `SalaDto` | Libera la plaza. Usarlo también al terminar la serie |
+| `ReconectarSala` | `codigo` | `SalaDto` | Con una conexión nueva; envía al instante sala, mapa y estado |
+| `ReanudarSala` | — | `SalaDto` | Igual, si el cliente ya no recuerda el código |
+| `ConfigurarSala` | `codigo`, `ConfiguracionSalaDto` | `SalaDto` | Solo el anfitrión, en el lobby |
+| `ElegirRol` | `codigo`, `"PACMAN"`, `"FANTASMA"` o `null` | `SalaDto` | Solo cuenta si juega solo contra la IA |
+| `IniciarPartida` | `codigo` | `SalaDto` | Solo el anfitrión |
+| `EnviarDireccion` | `codigo`, `direccion` (1 arriba, 2 abajo, 3 izquierda, 4 derecha) | `bool` | Se guarda hasta que pueda girar |
+| `UsarObjeto` | `codigo` | `bool` | Botón de acción |
+| `ObtenerSala`, `ObtenerNivel`, `ObtenerEstado` | `codigo` | `SalaDto`, `NivelDto`, `EstadoPartidaDto` | Para recuperarse si se perdió un aviso |
 
-    public ParadaGestorSalas(GestorSalas gestor)
-    {
-        _gestor = gestor;
-    }
+### Avisos (servidor → cliente)
 
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
-    }
+| Evento | Datos | Cuándo |
+| --- | --- | --- |
+| `SalaActualizada` | `SalaDto` | Cambios de jugadores, configuración o estado (`estado`: 1 lobby, 2 jugando, 3 transición, 4 finalizada) |
+| `NivelIniciado` | `NivelDto` | Al empezar cada nivel: el mapa (filas de texto), las bolas y los puntos de cajas |
+| `EstadoActualizado` | `EstadoPartidaDto` | Unas 20 veces por segundo: personajes (con `direccion` y `avance` para interpolar), bolas comidas, cajas, efectos y `eventos` |
 
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        await _gestor.DisposeAsync();
-    }
-}
-```
+Los avisos no garantizan entrega exactamente una vez. Si el cliente se reconecta,
+debe llamar a `ReconectarSala` o `ReanudarSala` y continuar con las instantáneas que
+recibe. Si pierde la señal, conserva su plaza y la IA mueve su personaje hasta que
+vuelva; si sale con `SalirSala`, la IA termina el nivel por él.
 
-La parada debe ocurrir en `IHostedService.StopAsync`, **antes** de disponer el
-proveedor DI. Esperar solamente al `DisposeAsync` del contenedor es demasiado tarde
-para crear los ámbitos que guardan resultados. La disposición posterior de DI
-reutiliza el mismo cierre idempotente. El adaptador de red debe dejar de admitir
-solicitudes durante esa parada; las llamadas tardías reciben una respuesta fallida.
+### CORS y pruebas con celulares
 
-No registrar el gestor como `scoped` o `transient`: cada solicitud obtendría salas
-distintas. Los futuros métodos del hub reciben el gestor y le entregan identidades
-ya validadas, dirección o botón de objeto; no reciben posiciones ni estados de juego
-para aplicarlos al dominio.
+El cliente de SignalR envía credenciales, por eso los orígenes deben ser
+explícitos. En desarrollo se acepta cualquier origen. Fuera de desarrollo se usan
+los de `Cors:Origenes` en `appsettings.json`: el servidor de Vite
+(`http://localhost:8080`) y Capacitor (`https://localhost`, `http://localhost`,
+`capacitor://localhost`).
 
-`JuegoHub.cs` y `NotificadorJuego.cs` siguen pendientes. El gestor no se registra
-todavía en la API ni se agrega un notificador vacío: la integración de celulares,
-grupos SignalR y autenticación queda en el adaptador posterior. Las comprobaciones
-del gestor utilizan dobles de catálogos, persistencia y notificación fuera de la
-solución, con los cinco JSON V2 del SQL; no migran ni escriben la base de datos.
+El perfil `http` solo escucha en `localhost`. Para conectar un celular de la misma
+red, arrancar con el perfil `red-local` (`dotnet run --launch-profile red-local`),
+que escucha en `http://0.0.0.0:5253`, y usar la IP de la computadora como servidor.
+Puede que Windows pida permitir el acceso en el firewall.

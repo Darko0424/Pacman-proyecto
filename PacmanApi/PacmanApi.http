@@ -1,10 +1,5 @@
 @PacmanApi_HostAddress = http://localhost:5253
 
-GET {{PacmanApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
-
 ### Catálogos
 GET {{PacmanApi_HostAddress}}/api/Nivel/Listar
 Accept: application/json

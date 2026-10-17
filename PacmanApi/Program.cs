@@ -1,11 +1,18 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using PacmanAccesoDatos.Contexto;
 using PacmanAccesoDatos.Implementaciones;
+using PacmanApi.Hubs;
+using PacmanApi.Seguridad;
+using PacmanApi.Servicios;
 using PacmanDominio.DTO;
 using PacmanDominio.InterfazAD;
 using PacmanDominio.InterfazLN;
 using PacmanLogicaNegocios.Implementacion;
+using PacmanLogicaNegocios.Juego.Salas;
+
+const string PoliticaCors = "Cliente";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +34,28 @@ builder.Services.AddSwaggerGen(opciones =>
     });
 });
 
+// El cliente de SignalR envía credenciales, así que los orígenes deben ser explícitos.
+// En desarrollo se acepta cualquiera para probar desde celulares de la red local.
+var origenes = builder.Configuration.GetSection("Cors:Origenes").Get<string[]>() ?? [];
+builder.Services.AddCors(opciones => opciones.AddPolicy(PoliticaCors, politica =>
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        politica.SetIsOriginAllowed(_ => true);
+    }
+    else
+    {
+        politica.WithOrigins(origenes);
+    }
+
+    politica.AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+}));
+
+// Solo el hub usa este esquema; los controladores validan el token por su cuenta
+builder.Services.AddAuthentication()
+    .AddScheme<AuthenticationSchemeOptions, AutenticacionSesion>(AutenticacionSesion.Esquema, null);
+builder.Services.AddAuthorization();
+
 builder.Services.AddDbContext<PacManDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("PacmanDb")));
@@ -43,6 +72,16 @@ builder.Services.AddScoped<IHistorialLN, HistorialLN>();
 builder.Services.AddScoped<IRankingLN, RankingLN>();
 builder.Services.AddScoped<IPartidaLN, PartidaLN>();
 
+// Tiempo real. El gestor y el notificador viven lo mismo que el servidor:
+// registrarlos como scoped crearía salas distintas en cada solicitud.
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<INotificadorJuego, NotificadorJuego>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<GestorSalas>();
+builder.Services.AddSingleton<IGestorSalas>(proveedor =>
+    proveedor.GetRequiredService<GestorSalas>());
+builder.Services.AddHostedService<ParadaGestorSalas>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -54,8 +93,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors(PoliticaCors);
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<JuegoHub>(JuegoHub.Ruta);
 
 app.Run();

@@ -13,6 +13,9 @@ public interface IGestorSalas
     Task<Respuesta<IEnumerable<SalaDto>>> ListarAsync();
     Task<Respuesta<SalaDto>> ObtenerAsync(string codigoSala);
 
+    // La sala donde el usuario tiene su plaza, para reanudar si el cliente perdió el código
+    Task<Respuesta<SalaDto>> ObtenerSalaDeUsuarioAsync(int idUsuario);
+
     Task<Respuesta<SalaDto>> IngresarAsync(
         string codigoSala, int idUsuario, string nombreUsuario, string idConexion);
     Task<Respuesta<SalaDto>> SalirAsync(string codigoSala, int idUsuario);

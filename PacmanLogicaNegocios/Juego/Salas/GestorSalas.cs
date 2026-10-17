@@ -128,6 +128,32 @@ public sealed class GestorSalas : IGestorSalas, IAsyncDisposable, IDisposable
             Task.FromResult(Respuesta<SalaDto>.Ok(SalaDto.Crear(contexto.Sala))));
     }
 
+    public async Task<Respuesta<SalaDto>> ObtenerSalaDeUsuarioAsync(int idUsuario)
+    {
+        try
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idUsuario);
+            ContextoSala contexto;
+
+            lock (_indices)
+            {
+                VerificarDisponible();
+
+                if (!_usuarios.TryGetValue(idUsuario, out contexto!))
+                {
+                    return Respuesta<SalaDto>.Fail("El usuario no tiene una plaza en ninguna sala.");
+                }
+            }
+
+            return await EjecutarEnSalaAsync(contexto, actual =>
+                Task.FromResult(Respuesta<SalaDto>.Ok(SalaDto.Crear(actual.Sala))));
+        }
+        catch (Exception excepcion)
+        {
+            return Fallo<SalaDto>(excepcion);
+        }
+    }
+
     public Task<Respuesta<SalaDto>> IngresarAsync(
         string codigoSala, int idUsuario, string nombreUsuario, string idConexion)
     {
