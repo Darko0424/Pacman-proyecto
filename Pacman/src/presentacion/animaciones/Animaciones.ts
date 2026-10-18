@@ -13,7 +13,7 @@ import {
 } from '../sprites/CatalogoSprites';
 
 export const ANIM_FANTASMA_ASUSTADO = 'fantasma-asustado';
-// Parpadea entre oscuro y blanco: el efecto está por terminar
+// parpadea entre oscuro y blanco significa que el efecto ya casi terminar
 export const ANIM_FANTASMA_ASUSTADO_FIN = 'fantasma-asustado-fin';
 
 export function animPacManComer(color: string): string {

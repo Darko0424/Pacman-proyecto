@@ -1,5 +1,7 @@
 import { Scene } from 'phaser';
 import { registrarAnimaciones } from '../animaciones/Animaciones';
+import { ARCHIVOS_SONIDO } from '../sonidos/CatalogoSonidos';
+import { FUENTE } from '../ui/Paleta';
 import {
     TAMANO_ACTOR,
     TAMANO_CASILLA,
@@ -40,14 +42,26 @@ export class EscenaCarga extends Scene {
         this.load.spritesheet(TEXTURA.ITEMS, 'sprites/items.png', item);
         this.load.spritesheet(TEXTURA.TILES, 'sprites/tiles.png', casilla);
         this.load.image(TEXTURA.LABERINTO_CLASICO, 'sprites/laberinto-clasico.png');
+
+        for (const clave of ARCHIVOS_SONIDO) {
+            this.load.audio(clave, `sonidos/${clave}.mp3`);
+        }
     }
 
     create(): void {
         registrarAnimaciones(this);
 
-        // http://localhost:8080/?sprites abre la galería para revisar los sprites
-        const verGaleria = new URLSearchParams(window.location.search).has('sprites');
+        // Accesos directos de desarrollo:
+        //   http://localhost:8080/?sprites  galería para revisar los sprites
+        //   http://localhost:8080/?salas    buscar sala / lobby
+        const parametros = new URLSearchParams(window.location.search);
+        const siguiente = parametros.has('sprites')
+            ? 'EscenaGaleriaSprites'
+            : parametros.has('salas') ? 'EscenaListaSalas' : 'MainMenu';
 
-        this.scene.start(verGaleria ? 'EscenaGaleriaSprites' : 'MainMenu');
+        // Los textos de Phaser no esperan a la fuente si no esta cargada usan otra
+        document.fonts.load(`16px ${FUENTE}`)
+            .catch(() => undefined)
+            .then(() => this.scene.start(siguiente));
     }
 }

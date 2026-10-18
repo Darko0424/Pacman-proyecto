@@ -22,6 +22,16 @@ Content-Type: application/json
   "contrasena": "Prueba1234"
 }
 
+### Usuario: segundo jugador para probar salas multijugador
+POST {{PacmanApi_HostAddress}}/api/Usuario/Registrar
+Content-Type: application/json
+
+{
+  "nombreUsuario": "jugador_prueba2",
+  "correoElectronico": "jugador_prueba2@example.com",
+  "contrasena": "Prueba1234"
+}
+
 ### Usuario: inicio de sesión (usuario o correo)
 # @name sesion
 POST {{PacmanApi_HostAddress}}/api/Usuario/IniciarSesion
