@@ -71,6 +71,8 @@ builder.Services.AddScoped<IUsuarioLN, UsuarioLN>();
 builder.Services.AddScoped<IHistorialLN, HistorialLN>();
 builder.Services.AddScoped<IRankingLN, RankingLN>();
 builder.Services.AddScoped<IPartidaLN, PartidaLN>();
+builder.Services.Configure<ConfiguracionCorreo>(builder.Configuration.GetSection("Correo"));
+builder.Services.AddSingleton<IServicioCorreo, ServicioCorreoSmtp>();
 
 // Tiempo real. El gestor y el notificador viven lo mismo que el servidor:
 // registrarlos como scoped crearía salas distintas en cada solicitud.

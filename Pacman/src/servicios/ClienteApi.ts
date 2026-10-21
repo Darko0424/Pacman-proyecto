@@ -2,6 +2,8 @@ import { TDificultad } from '../modelos/dificultad.model';
 import { IRespuesta } from '../modelos/respuesta.model';
 import { TUsuario } from '../modelos/usuario.model';
 import { URL_API } from './Configuracion';
+import { SugerenciasNombre } from '../modelos/sugerencias-nombre.model';
+
 
 // Lo que devuelve api/Usuario/IniciarSesion (clsSesionIniciada)
 export interface SesionIniciada {
@@ -10,6 +12,7 @@ export interface SesionIniciada {
 }
 
 const CLAVE_SESION = 'pacman.sesion';
+export const CODIGO_CORREO_NO_VERIFICADO = 'CORREO_NO_VERIFICADO';
 
 // ---------- Sesión guardada en el dispositivo ----------
 
@@ -41,6 +44,16 @@ export function borrarSesion(): void {
 
 export function obtenerToken(): string | null {
     return obtenerSesion()?.token ?? null;
+}
+
+export function actualizarUsuarioSesion(usuario: TUsuario): void{
+    const sesion = obtenerSesion();
+
+    if (sesion) {
+        guardarSesion({...sesion, usuario});
+
+    }
+
 }
 
 // ---------- Llamadas REST ----------
@@ -83,4 +96,32 @@ export function validarSesion(): Promise<IRespuesta<TUsuario>> {
 
 export function listarDificultades(): Promise<IRespuesta<TDificultad[]>> {
     return solicitar<TDificultad[]>('GET', 'api/Dificultad/Listar');
+}
+
+export function registrar(correoElectronico: string, contrasena: string): Promise<IRespuesta<TUsuario>> {
+    return solicitar<TUsuario>('POST', 'api/Usuario/Registrar', { correoElectronico, contrasena });
+}
+
+// Si el código es correcto devuelve la sesión iniciada (con token)
+export function verificarCorreo(correoElectronico: string, codigo: string): Promise<IRespuesta<SesionIniciada>> {
+    return solicitar<SesionIniciada>('POST', 'api/Usuario/VerificarCorreo', { correoElectronico, codigo });
+}
+
+export function reenviarCodigo(correoElectronico: string): Promise<IRespuesta<boolean>> {
+    return solicitar<boolean>('POST', 'api/Usuario/ReenviarCodigo', { correoElectronico });
+}
+
+export function sugerirNombres(nombre: string): Promise<IRespuesta<SugerenciasNombre>> {
+    return solicitar<SugerenciasNombre>('GET', `api/Usuario/SugerirNombres?nombre=${encodeURIComponent(nombre)}`);
+}
+
+export function asignarNombre(nombreUsuario: string): Promise<IRespuesta<TUsuario>> {
+    return solicitar<TUsuario>('POST', 'api/Usuario/AsignarNombre', { nombreUsuario });
+}
+
+// Cierra la sesión en el servidor y borra la guardada. Aunque el servidor no
+// responda, en el dispositivo se borra igual.
+export async function cerrarSesion(): Promise<void> {
+    await solicitar<boolean>('POST', 'api/Usuario/CerrarSesion');
+    borrarSesion();
 }

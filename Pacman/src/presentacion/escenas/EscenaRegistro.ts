@@ -1,0 +1,145 @@
+import { Scene } from 'phaser';
+import { registrar } from '../../servicios/ClienteApi';
+import { Boton } from '../ui/Boton';
+import { crearCampo, habilitarCampos } from '../ui/CampoTexto';
+import { COLOR, estiloTexto } from '../ui/Paleta';
+import { crearPanel } from '../ui/Panel';
+import { DatosVerificacion } from './EscenaVerificacion';
+import { Aviso, dibujarPantallaSesion } from './FlujoSesion';
+
+
+const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LARGO_MAXIMO_CORREO = 100;
+const LARGO_MINIMO_CONTRASENA = 8;
+const LARGO_MAXIMO_CONTRASENA = 128;
+
+export class EscenaRegistro extends Scene {
+    private campoCorreo: HTMLInputElement;
+    private campoContrasena: HTMLInputElement;
+    private campoConfirmar: HTMLInputElement;
+    private aviso: Aviso;
+    private botonCrear: Boton;
+    private botonVolver: Boton;
+    private ocupado = false;
+
+    constructor() {
+        super('EscenaRegistro');
+    }
+
+    create(): void {
+        const centro = this.scale.width / 2;
+
+        this.ocupado = false;
+
+        dibujarPantallaSesion(this, 'CREAR CUENTA');
+        crearPanel(this, centro - 260, 210, 520, 300);
+
+        this.add.text(centro - 220, 235, 'Correo electrónico', estiloTexto(12, COLOR.MURO_CLARO));
+        this.campoCorreo = crearCampo(this, centro, 280, {
+            tipo: 'email',
+            ejemplo: 'tucorreo@gmail.com',
+            autocompletar: 'email',
+            largoMaximo: LARGO_MAXIMO_CORREO,
+            alEnter: () => this.campoContrasena.focus(),
+        });
+
+        this.add.text(centro - 220, 330, 'Contraseña', estiloTexto(12, COLOR.MURO_CLARO));
+        this.campoContrasena = crearCampo(this, centro, 375, {
+            tipo: 'password',
+            ejemplo: 'Mínimo 8 caracteres',
+            autocompletar: 'new-password',
+            largoMaximo: LARGO_MAXIMO_CONTRASENA,
+            alEnter: () => this.campoConfirmar.focus(),
+        });
+
+        this.add.text(centro - 220, 425, 'Repite la contraseña', estiloTexto(12, COLOR.MURO_CLARO));
+        this.campoConfirmar = crearCampo(this, centro, 470, {
+            tipo: 'password',
+            ejemplo: '********',
+            autocompletar: 'new-password',
+            largoMaximo: LARGO_MAXIMO_CONTRASENA,
+            alEnter: () => this.registrarse(),
+        });
+
+        this.aviso = new Aviso(this, 545);
+
+        this.botonCrear = new Boton(this, centro, 610, 'CREAR CUENTA', {
+            ancho: 300,
+            color: COLOR.PACMAN,
+            alPulsar: () => this.registrarse(),
+        });
+
+        this.botonVolver = new Boton(this, centro, 685, 'VOLVER', {
+            ancho: 300,
+            color: COLOR.GRIS_CLARO,
+            alPulsar: () => this.scene.start('EscenaLogin'),
+        });
+
+        this.campoCorreo.focus();
+    }
+
+    private async registrarse(): Promise<void> {
+        if (this.ocupado) {
+            return;
+        }
+
+        const correo = this.campoCorreo.value.trim().toLowerCase();
+        const contrasena = this.campoContrasena.value;
+        const error = this.validar(correo, contrasena, this.campoConfirmar.value);
+
+        if (error) {
+            this.aviso.error(error);
+            return;
+        }
+
+        this.setOcupado(true, 'Creando cuenta...');
+
+        const respuesta = await registrar(correo, contrasena);
+
+        if (!this.sys.isActive()) {
+            return;
+        }
+
+        if (!respuesta.success) {
+            this.setOcupado(false);
+            this.aviso.error(respuesta.error || 'No se pudo crear la cuenta.');
+            return;
+        }
+
+        const datos: DatosVerificacion = {
+            correo,
+            codigoEnviado: true,
+            aviso: respuesta.error || undefined,
+        };
+
+        this.scene.start('EscenaVerificacion', datos);
+    }
+
+    private validar(correo: string, contrasena: string, confirmacion: string): string | null {
+        if (!correo || !contrasena) {
+            return 'Completa todos los campos.';
+        }
+
+        if (correo.length > LARGO_MAXIMO_CORREO || !PATRON_CORREO.test(correo)) {
+            return 'El correo no es válido.';
+        }
+
+        if (contrasena.length < LARGO_MINIMO_CONTRASENA || contrasena.length > LARGO_MAXIMO_CONTRASENA) {
+            return `La contraseña debe tener entre ${LARGO_MINIMO_CONTRASENA} y ${LARGO_MAXIMO_CONTRASENA} caracteres.`;
+        }
+
+        if (contrasena !== confirmacion) {
+            return 'Las contraseñas no coinciden.';
+        }
+
+        return null;
+    }
+
+    private setOcupado(ocupado: boolean, texto = ''): void {
+        this.ocupado = ocupado;
+        this.botonCrear.setHabilitado(!ocupado);
+        this.botonVolver.setHabilitado(!ocupado);
+        habilitarCampos([this.campoCorreo, this.campoContrasena, this.campoConfirmar], !ocupado);
+        this.aviso.info(texto);
+    }
+}

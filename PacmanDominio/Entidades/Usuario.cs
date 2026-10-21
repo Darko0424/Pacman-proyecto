@@ -15,6 +15,18 @@ public partial class Usuario
 
     public DateTime FechaRegistro { get; set; }
 
+    public bool CorreoVerificado { get; set; }
+
+    public bool NombreDefinido { get; set; }
+
+    public string? CodigoVerificacionHash { get; set; }
+
+    public DateTime? CodigoExpira {  get; set; }
+
+    public DateTime? CodigoEnviado { get; set; }
+
+    public byte IntentosCodigo { get; set; }
+
     public virtual ICollection<ParticipanteRonda> ParticipantesRonda { get; set; } = new List<ParticipanteRonda>();
 
     public virtual ICollection<SesionMovil> SesionesMoviles { get; set; } = new List<SesionMovil>();

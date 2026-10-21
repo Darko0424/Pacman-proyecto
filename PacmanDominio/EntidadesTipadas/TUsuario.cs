@@ -8,6 +8,7 @@ public class TUsuario
     public string NombreUsuario { get; set; } = string.Empty;
     public string CorreoElectronico { get; set; } = string.Empty;
     public DateTime FechaRegistro { get; set; }
+    public bool NombreDefinido { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Contrasena { get; set; }

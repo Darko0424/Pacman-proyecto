@@ -7,10 +7,11 @@
     <File Path="Base De Datos/05_Vistas.sql" />
     <File Path="Base De Datos/06_DatosCatalogos.sql" />
     <File Path="Base De Datos/07_DatosPrueba.sql" />
+    <File Path="Base De Datos/08_VerificacionCorreo.sql" />
   </Folder>
   <Project Path="Pacman/Pacman.esproj">
     <Build />
-    <Deploy />
+    <Deploy Solution="Release|*" />
   </Project>
   <Project Path="PacmanAccesoDatos/PacmanAccesoDatos.csproj" />
   <Project Path="PacmanApi/PacmanApi.csproj" />

@@ -12,27 +12,48 @@ Accept: application/json
 GET {{PacmanApi_HostAddress}}/api/Objeto/Bando/PACMAN
 Accept: application/json
 
-### Usuario: registro
+### ---------- Usuario: registro y verificación ----------
+# Pon aquí un correo tuyo para recibir el código de verificación de verdad
+@correoNuevo = tucorreo@gmail.com
+# Después de registrarte, cambia esto por el código que te llegó (o el de la consola)
+@codigo = 000000
+
+### 1. Registro (solo correo y contraseña)
 POST {{PacmanApi_HostAddress}}/api/Usuario/Registrar
 Content-Type: application/json
 
 {
-  "nombreUsuario": "jugador_prueba",
-  "correoElectronico": "jugador_prueba@example.com",
+  "correoElectronico": "{{correoNuevo}}",
   "contrasena": "Prueba1234"
 }
 
-### Usuario: segundo jugador para probar salas multijugador
-POST {{PacmanApi_HostAddress}}/api/Usuario/Registrar
+### 2. Login sin verificar: debe responder codigo = CORREO_NO_VERIFICADO
+POST {{PacmanApi_HostAddress}}/api/Usuario/IniciarSesion
 Content-Type: application/json
 
 {
-  "nombreUsuario": "jugador_prueba2",
-  "correoElectronico": "jugador_prueba2@example.com",
+  "usuario": "{{correoNuevo}}",
   "contrasena": "Prueba1234"
 }
 
-### Usuario: inicio de sesión (usuario o correo)
+### 3. Verificar el código (si es correcto devuelve el token)
+POST {{PacmanApi_HostAddress}}/api/Usuario/VerificarCorreo
+Content-Type: application/json
+
+{
+  "correoElectronico": "{{correoNuevo}}",
+  "codigo": "{{codigo}}"
+}
+
+### 4. Reenviar el código (uno por minuto)
+POST {{PacmanApi_HostAddress}}/api/Usuario/ReenviarCodigo
+Content-Type: application/json
+
+{
+  "correoElectronico": "{{correoNuevo}}"
+}
+
+### 5. Usuario: inicio de sesión (usuario o correo)
 # @name sesion
 POST {{PacmanApi_HostAddress}}/api/Usuario/IniciarSesion
 Content-Type: application/json
@@ -42,23 +63,35 @@ Content-Type: application/json
   "contrasena": "Prueba1234"
 }
 
-### Usuario: sesión actual
+### 6. Usuario: sugerencias de nombre
+GET {{PacmanApi_HostAddress}}/api/Usuario/SugerirNombres?nombre=jugador_prueba
+Accept: application/json
+
+### 7. Usuario: elegir nombre (usa el token del inicio de sesión)
+POST {{PacmanApi_HostAddress}}/api/Usuario/AsignarNombre
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "nombreUsuario": "pablo_pacman"
+}
+### 8. Usuario: sesión actual
 GET {{PacmanApi_HostAddress}}/api/Usuario/Sesion
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
-### Historial: partidas del usuario de la sesión
+### 9. Historial: partidas del usuario de la sesión
 GET {{PacmanApi_HostAddress}}/api/Historial/Listar
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
-### Historial: detalle por nivel de una partida
+### 10. Historial: detalle por nivel de una partida
 GET {{PacmanApi_HostAddress}}/api/Historial/Rondas/1
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
-### Historial: progreso general
+### 11. Historial: progreso general
 GET {{PacmanApi_HostAddress}}/api/Historial/Progreso
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
-### Ranking por rol (PACMAN o FANTASMA)
+### 12. Ranking por rol (PACMAN o FANTASMA)
 GET {{PacmanApi_HostAddress}}/api/Ranking/Listar/PACMAN
 Accept: application/json
 

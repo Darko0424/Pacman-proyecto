@@ -57,7 +57,7 @@ export class EscenaCarga extends Scene {
         const parametros = new URLSearchParams(window.location.search);
         const siguiente = parametros.has('sprites')
             ? 'EscenaGaleriaSprites'
-            : parametros.has('salas') ? 'EscenaListaSalas' : 'MainMenu';
+            : parametros.has('salas') ? 'EscenaListaSalas' : 'EscenaLogin';
 
         // Los textos de Phaser no esperan a la fuente si no esta cargada usan otra
         document.fonts.load(`16px ${FUENTE}`)

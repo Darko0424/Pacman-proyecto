@@ -27,6 +27,28 @@ public class UsuarioController : ControllerBase
         return Ok(resultado);
     }
 
+    [HttpPost("VerificarCorreo")]
+    public async Task<IActionResult> VerificarCorreo([FromBody] clsVerificacionCorreo datos)
+    {
+        var resultado = await _usuarioLN.VerificarCorreoAsync(datos);
+
+        if (!resultado.Success)
+            return BadRequest(resultado);
+
+        return Ok(resultado);
+    }
+
+    [HttpPost("ReenviarCodigo")]
+    public async Task<IActionResult> ReenviarCodigo([FromBody] clsSolicitudCodigo datos)
+    {
+        var resultado = await _usuarioLN.ReenviarCodigoAsync(datos);
+
+        if (!resultado.Success)
+            return BadRequest(resultado);
+
+        return Ok(resultado);
+    }
+
     [HttpPost("IniciarSesion")]
     public async Task<IActionResult> IniciarSesion([FromBody] clsCredenciales datos)
     {
@@ -46,6 +68,29 @@ public class UsuarioController : ControllerBase
 
         if (!resultado.Success)
             return Unauthorized(resultado);
+
+        return Ok(resultado);
+    }
+
+    [HttpGet("SugerirNombres")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> SugerirNombres([FromQuery] string nombre)
+    {
+        var resultado = await _usuarioLN.SugerirNombresAsync(nombre);
+
+        if (!resultado.Success)
+            return BadRequest(resultado);
+
+        return Ok(resultado);
+    }
+
+    [HttpPost("AsignarNombre")]
+    public async Task<IActionResult> AsignarNombre([FromBody] clsNombreUsuario datos)
+    {
+        var resultado = await _usuarioLN.AsignarNombreAsync(Request.ObtenerToken(), datos);
+
+        if (!resultado.Success)
+            return BadRequest(resultado);
 
         return Ok(resultado);
     }
