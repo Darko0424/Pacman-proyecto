@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace PacmanUtilitarios;
 
 public partial class Respuesta<T>
@@ -5,6 +7,9 @@ public partial class Respuesta<T>
     public bool Success { get; set; }
     public T? Data { get; set; }
     public string Error { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Codigo { get; set; }
 
     public Respuesta()
     {

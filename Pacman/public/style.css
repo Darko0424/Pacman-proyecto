@@ -19,3 +19,70 @@ body {
     width: 100%;
     height: 100%;
 }
+
+/* ---------- Campos de texto de las pantallas de sesión ---------- */
+.campo-texto {
+    width: 440px;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    font-family: "Press Start 2P", monospace;
+    font-size: 14px;
+    color: #ffffff;
+    background-color: #272736;
+    border: 3px solid #4b5bab;
+    border-radius: 8px;
+    outline: none;
+}
+
+    .campo-texto:focus {
+        border-color: #4da6ff;
+    }
+
+    .campo-texto::placeholder {
+        color: #7e7e8f;
+    }
+
+    .campo-texto:disabled {
+        opacity: 0.5;
+    }
+
+    /* Edge trae su propio ojito: se oculta porque ya está el botón VER */
+    .campo-texto::-ms-reveal {
+        display: none;
+    }
+
+.campo-contrasena {
+    position: relative;
+    width: 440px;
+}
+
+    .campo-contrasena .campo-texto {
+        padding-right: 110px;
+    }
+
+.boton-ver {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 6px;
+    font-family: "Press Start 2P", monospace;
+    font-size: 10px;
+    color: #4da6ff;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+    .boton-ver:hover {
+        color: #ffe478;
+    }
+
+/* Código de verificación: grande y centrado */
+.campo-codigo {
+    width: 300px;
+    padding: 14px 0 14px 12px;
+    font-size: 28px;
+    letter-spacing: 12px;
+    text-align: center;
+}

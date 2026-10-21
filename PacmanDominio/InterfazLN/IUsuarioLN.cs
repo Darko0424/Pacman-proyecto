@@ -10,4 +10,8 @@ public interface IUsuarioLN
     Task<Respuesta<clsSesionIniciada>> IniciarSesionAsync(clsCredenciales datos);
     Task<Respuesta<TUsuario>> ValidarSesionAsync(string token);
     Task<Respuesta<bool>> CerrarSesionAsync(string token);
+    Task<Respuesta<clsSesionIniciada>> VerificarCorreoAsync(clsVerificacionCorreo datos);
+    Task<Respuesta<bool>> ReenviarCodigoAsync(clsSolicitudCodigo datos);
+    Task<Respuesta<clsSugerenciasNombre>> SugerirNombresAsync(string nombreDeseado);
+    Task<Respuesta<TUsuario>> AsignarNombreAsync(string token, clsNombreUsuario datos);
 }

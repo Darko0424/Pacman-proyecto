@@ -289,6 +289,15 @@ public partial class PacManDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("nombre_usuario");
+            entity.Property(e => e.CorreoVerificado).HasColumnName("correo_verificado");
+            entity.Property(e => e.NombreDefinido).HasColumnName("nombre_definido");
+            entity.Property(e => e.CodigoVerificacionHash)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("codigo_verificacion_hash");
+            entity.Property(e => e.CodigoExpira).HasColumnName("codigo_expira");
+            entity.Property(e => e.CodigoEnviado).HasColumnName("codigo_enviado");
+            entity.Property(e => e.IntentosCodigo).HasColumnName("intentos_codigo");
         });
 
         modelBuilder.Entity<HistorialEntrada>(entity =>
