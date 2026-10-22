@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Pacman local",
+    "Projects": [
+      {
+        "Path": "PacmanApi\\PacmanApi.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      },
+      {
+        "Path": "Pacman\\Pacman.esproj",
+        "Action": "Start",
+        "DebugTarget": "Pacman (Edge)"
+      }
+    ]
+  }
+]

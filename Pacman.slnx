@@ -11,6 +11,7 @@
   </Folder>
   <Project Path="Pacman/Pacman.esproj">
     <Build />
+    <Deploy Solution="Debug|*" />
     <Deploy Solution="Release|*" />
   </Project>
   <Project Path="PacmanAccesoDatos/PacmanAccesoDatos.csproj" />
