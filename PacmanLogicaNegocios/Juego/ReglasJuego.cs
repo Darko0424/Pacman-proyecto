@@ -62,6 +62,16 @@ public static class ReglasJuego
     // Los fantasmas de la IA evitan pisar la casilla de otro fantasma (explosión)
     public const int PenalizacionCasillaOcupada = 4;
 
+    // Objetos
+    public const double FactorRalentizar = 0.5;
+    public const int MultiplicadorPuntosDobles = 2;
+
+    // El teletransporte avanza en línea recta hasta este número de casillas
+    public const int DistanciaTeletransporte = 6;
+
+    // Lo que queda congelado el Pac-Man que pisa una trampa de hielo
+    public static TimeSpan DuracionCongeladoTrampa { get; } = TimeSpan.FromSeconds(3);
+
     // Cada cuánto aparece una caja; null = sin cajas
     public static TimeSpan? IntervaloCajas(FrecuenciaCajas frecuencia)
     {

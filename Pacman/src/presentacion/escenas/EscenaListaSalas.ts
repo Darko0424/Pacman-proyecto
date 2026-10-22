@@ -127,6 +127,12 @@ export class EscenaListaSalas extends Scene {
             return;
         }
 
+        await this.salirDeSalasTerminadas();
+
+        if (!this.sys.isActive()) {
+            return;
+        }
+
         await this.actualizar();
 
         this.temporizador = this.time.addEvent({
@@ -134,6 +140,21 @@ export class EscenaListaSalas extends Scene {
             loop: true,
             callback: () => this.actualizar(),
         });
+    }
+
+    // Una sala finalizada conserva a sus jugadores hasta que salen, y mientras
+    // tanto no pueden crear ni unirse a otra. ReanudarSala no la devuelve, así
+    // que se busca en la lista.
+    private async salirDeSalasTerminadas(): Promise<void> {
+        const idUsuario = obtenerSesion()?.usuario.idUsuario;
+        const respuesta = await conexionTiempoReal.listarSalas();
+        const terminadas = (respuesta.data ?? []).filter((sala) =>
+            sala.estado === EstadoSala.Finalizada &&
+            sala.jugadores.some((jugador) => jugador.idUsuario === idUsuario));
+
+        for (const sala of terminadas) {
+            await conexionTiempoReal.salirSala(sala.codigo);
+        }
     }
 
     private async actualizar(): Promise<void> {

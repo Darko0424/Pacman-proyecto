@@ -28,17 +28,27 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM dificultades d WHERE d.id_dificultad = v.id_dificultad);
 GO
 
--- PROVISIONALES: el equipo todavía no define los objetos de cada bando.
--- efecto es la clave que el motor asocia con su implementación (IEfectoObjeto).
-INSERT INTO objetos (id_objeto, nombre, bando, efecto, duracion_seg)
-SELECT v.id_objeto, v.nombre, v.bando, v.efecto, v.duracion_seg
-FROM (VALUES
-    (1, 'Turbo',   'PACMAN',   'VELOCIDAD', 5),
-    (2, 'Escudo',  'PACMAN',   'ESCUDO',    4),
-    (3, 'Impulso', 'FANTASMA', 'VELOCIDAD', 5),
-    (4, 'Hielo',   'FANTASMA', 'CONGELAR',  3)
+-- Objetos de las cajas. efecto es la clave que el motor asocia con su
+-- implementación (IEfectoObjeto). duracion_seg: lo que dura el efecto; en la
+-- trampa, lo que espera en el mapa; el teletransporte es instantáneo.
+-- MERGE en vez de INSERT: también actualiza los objetos de una base ya creada
+-- (nada referencia a esta tabla, solo se guardan cuántos objetos usó cada uno).
+MERGE objetos AS o
+USING (VALUES
+    (1, 'Turbo',           'PACMAN',   'VELOCIDAD',      5),
+    (2, 'Escudo',          'PACMAN',   'ESCUDO',         4),
+    (3, 'Teletransporte',  'FANTASMA', 'TELETRANSPORTE', 1),
+    (4, 'Hielo',           'PACMAN',   'CONGELAR',       3),
+    (5, 'Puntos dobles',   'PACMAN',   'PUNTOS_DOBLES',  8),
+    (6, 'Ralentizar',      'FANTASMA', 'RALENTIZAR',     4),
+    (7, 'Trampa de hielo', 'FANTASMA', 'TRAMPA',         15)
 ) AS v (id_objeto, nombre, bando, efecto, duracion_seg)
-WHERE NOT EXISTS (SELECT 1 FROM objetos o WHERE o.id_objeto = v.id_objeto);
+ON o.id_objeto = v.id_objeto
+WHEN MATCHED THEN
+    UPDATE SET nombre = v.nombre, bando = v.bando, efecto = v.efecto, duracion_seg = v.duracion_seg
+WHEN NOT MATCHED THEN
+    INSERT (id_objeto, nombre, bando, efecto, duracion_seg)
+    VALUES (v.id_objeto, v.nombre, v.bando, v.efecto, v.duracion_seg);
 GO
 
 -- Cinco niveles estáticos. El contrato JSON versión 2 se documenta en README.md.

@@ -28,6 +28,12 @@ public interface IEfectoObjeto
         return 1;
     }
 
+    // Mientras está vigente: factor sobre los puntos que gana cada actor (1 = sin cambio)
+    int MultiplicadorPuntos(EstadoPartida partida, EfectoActivo efecto, Entidad actor)
+    {
+        return 1;
+    }
+
     // Mientras está vigente: true si el actor no puede ser atrapado ni comido
     bool Protege(EstadoPartida partida, EfectoActivo efecto, Entidad actor)
     {

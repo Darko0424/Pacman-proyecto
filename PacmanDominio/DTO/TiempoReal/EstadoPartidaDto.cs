@@ -28,6 +28,9 @@ public sealed class EstadoPartidaDto
     // Solo las cajas que siguen en el mapa
     public IReadOnlyList<CajaDto> Cajas { get; init; } = Array.Empty<CajaDto>();
 
+    // Trampas de hielo puestas por los fantasmas que nadie ha pisado
+    public IReadOnlyList<TrampaDto> Trampas { get; init; } = Array.Empty<TrampaDto>();
+
     public IReadOnlyList<EfectoDto> Efectos { get; init; } = Array.Empty<EfectoDto>();
 
     // Lo que pasó desde el estado anterior (sonidos y animaciones)
@@ -77,6 +80,7 @@ public sealed class EstadoPartidaDto
                     Eliminado = pacman.Eliminado,
                     ReaparicionPendiente = pacman.ReaparicionPendiente,
                     EsInvencible = pacman.EsInvencible(tiempo),
+                    Congelado = pacman.EstaCongelado(tiempo),
                     IdObjetoGuardado = pacman.IdObjetoGuardado,
                     Puntuacion = pacman.Puntuacion
                 })
@@ -98,6 +102,7 @@ public sealed class EstadoPartidaDto
                     Eliminado = fantasma.Eliminado,
                     ReaparicionPendiente = fantasma.ReaparicionPendiente,
                     EsInvencible = fantasma.EsInvencible(tiempo),
+                    Congelado = fantasma.EstaCongelado(tiempo),
                     IdObjetoGuardado = fantasma.IdObjetoGuardado,
                     Puntuacion = fantasma.Puntuacion,
                     Asustado = fantasma.EstaAsustado(tiempo),
@@ -112,6 +117,17 @@ public sealed class EstadoPartidaDto
                     IdCaja = caja.IdCaja,
                     Fila = caja.Posicion.Fila,
                     Columna = caja.Posicion.Columna
+                })
+                .ToList()
+                .AsReadOnly(),
+            Trampas = partida.Trampas
+                .Select(trampa => new TrampaDto
+                {
+                    IdTrampa = trampa.IdTrampa,
+                    Fila = trampa.Posicion.Fila,
+                    Columna = trampa.Posicion.Columna,
+                    IdPersonajeOrigen = trampa.IdPersonajeOrigen,
+                    FinSegundos = trampa.Fin.TotalSeconds
                 })
                 .ToList()
                 .AsReadOnly(),
@@ -169,6 +185,9 @@ public sealed class PacManDto
     public bool Eliminado { get; init; }
     public bool ReaparicionPendiente { get; init; }
     public bool EsInvencible { get; init; }
+
+    // Pisó una trampa de hielo (el objeto Hielo se ve en Efectos)
+    public bool Congelado { get; init; }
     public byte? IdObjetoGuardado { get; init; }
     public int Puntuacion { get; init; }
 }
@@ -188,6 +207,9 @@ public sealed class FantasmaDto
     public bool Eliminado { get; init; }
     public bool ReaparicionPendiente { get; init; }
     public bool EsInvencible { get; init; }
+
+    // Pisó una trampa de hielo (el objeto Hielo se ve en Efectos)
+    public bool Congelado { get; init; }
     public byte? IdObjetoGuardado { get; init; }
     public int Puntuacion { get; init; }
     public bool Asustado { get; init; }
@@ -199,6 +221,15 @@ public sealed class CajaDto
     public int IdCaja { get; init; }
     public int Fila { get; init; }
     public int Columna { get; init; }
+}
+
+public sealed class TrampaDto
+{
+    public int IdTrampa { get; init; }
+    public int Fila { get; init; }
+    public int Columna { get; init; }
+    public byte IdPersonajeOrigen { get; init; }
+    public double FinSegundos { get; init; }
 }
 
 public sealed class EfectoDto

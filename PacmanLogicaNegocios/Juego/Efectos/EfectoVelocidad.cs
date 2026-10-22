@@ -5,7 +5,7 @@ using PacmanDominio.Juego.Items;
 
 namespace PacmanLogicaNegocios.Juego.Efectos;
 
-// PROVISIONAL (objetos Turbo e Impulso): quien lo usa va más rápido.
+// Objeto Turbo (Pac-Man): quien lo usa va más rápido.
 public sealed class EfectoVelocidad : IEfectoObjeto
 {
     public const double Factor = 1.5;

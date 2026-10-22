@@ -11,13 +11,15 @@ import { EscenaRegistro } from '../presentacion/escenas/EscenaRegistro';
 import { EscenaSala } from '../presentacion/escenas/EscenaSala';
 import { EscenaVerificacion } from '../presentacion/escenas/EscenaVerificacion';
 import { EscenaMenu } from '../presentacion/escenas/EscenaMenu';
+import { EscenaJuego } from '../presentacion/escenas/EscenaJuego';
 
 
 //  Find out more information about the Game Config at:
 //  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
-    width: 1024,
+    // 16:9: el juego se juega con el celular acostado
+    width: 1366,
     height: 768,
     parent: 'game-container',
     backgroundColor: '#272736',
@@ -42,6 +44,7 @@ const config: Phaser.Types.Core.GameConfig = {
         EscenaGaleriaSprites,
         EscenaListaSalas,
         EscenaSala,
+        EscenaJuego,
         MainMenu,
         MainGame,
         GameOver

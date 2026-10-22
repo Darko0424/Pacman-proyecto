@@ -11,6 +11,7 @@ public sealed class EstadoPartida
 {
     private readonly List<CajaObjeto> _cajas = new();
     private readonly List<EfectoActivo> _efectos = new();
+    private readonly List<Trampa> _trampas = new();
 
     public int NumeroNivel { get; }
     public ModoPartida Modo { get; }
@@ -20,6 +21,7 @@ public sealed class EstadoPartida
     public IReadOnlyList<Fantasma> Fantasmas { get; }
     public IReadOnlyList<CajaObjeto> Cajas { get; }
     public IReadOnlyList<EfectoActivo> EfectosActivos { get; }
+    public IReadOnlyList<Trampa> Trampas { get; }
     public TimeSpan TiempoSimulacion { get; private set; }
     public string? CodigoSala { get; private set; }
 
@@ -79,10 +81,12 @@ public sealed class EstadoPartida
                 Laberinto.BolasConsumidas == 0 &&
                 _cajas.Count == 0 &&
                 _efectos.Count == 0 &&
+                _trampas.Count == 0 &&
                 Actores.All(actor =>
                     actor.VidasRestantes == Configuracion.Vidas &&
                     !actor.ReaparicionPendiente &&
                     actor.InvencibleHasta == TimeSpan.Zero &&
+                    actor.CongeladoHasta == TimeSpan.Zero &&
                     !actor.IdObjetoGuardado.HasValue &&
                     actor.Puntuacion == 0);
         }
@@ -119,6 +123,7 @@ public sealed class EstadoPartida
         Fantasmas = fantasmas.ToList().AsReadOnly();
         Cajas = _cajas.AsReadOnly();
         EfectosActivos = _efectos.AsReadOnly();
+        Trampas = _trampas.AsReadOnly();
 
         ValidarComposicion();
         ValidarActoresIniciales();
@@ -165,6 +170,11 @@ public sealed class EstadoPartida
         }
 
         if (actor is Fantasma fantasma && fantasma.EstaAturdido(TiempoSimulacion))
+        {
+            return false;
+        }
+
+        if (actor.EstaCongelado(TiempoSimulacion))
         {
             return false;
         }
@@ -433,6 +443,46 @@ public sealed class EstadoPartida
     public bool RetirarEfecto(int idEfecto)
     {
         return _efectos.RemoveAll(efecto => efecto.IdEfecto == idEfecto) > 0;
+    }
+
+    // Una trampa por casilla
+    public bool ColocarTrampa(Trampa trampa)
+    {
+        ArgumentNullException.ThrowIfNull(trampa);
+        ObtenerActor(trampa.IdPersonajeOrigen);
+
+        if (Terminada || trampa.Fin <= TiempoSimulacion ||
+            !Laberinto.EsTransitable(trampa.Posicion.Fila, trampa.Posicion.Columna) ||
+            _trampas.Any(existente => existente.IdTrampa == trampa.IdTrampa ||
+                (existente.Posicion.Fila == trampa.Posicion.Fila &&
+                    existente.Posicion.Columna == trampa.Posicion.Columna)))
+        {
+            return false;
+        }
+
+        _trampas.Add(trampa);
+
+        return true;
+    }
+
+    public bool QuitarTrampa(int idTrampa)
+    {
+        return _trampas.RemoveAll(trampa => trampa.IdTrampa == idTrampa) > 0;
+    }
+
+    // Deja al personaje inmóvil hasta el tiempo indicado (trampas de hielo)
+    public bool CongelarActor(byte idPersonaje, TimeSpan hasta)
+    {
+        var actor = ObtenerActor(idPersonaje);
+
+        if (Terminada || !actor.PuedeParticipar || hasta <= TiempoSimulacion)
+        {
+            return false;
+        }
+
+        actor.Congelar(hasta);
+
+        return true;
     }
 
     // El jugador se desconectó (abandono = false) o se fue (abandono = true)

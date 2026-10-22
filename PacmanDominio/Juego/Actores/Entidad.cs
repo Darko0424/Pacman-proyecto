@@ -25,6 +25,9 @@ public abstract class Entidad
     // Vencimiento relativo al tiempo de simulación, no al reloj del sistema.
     public TimeSpan InvencibleHasta { get; private set; }
 
+    // Inmóvil por una trampa de hielo (tiempo de simulación)
+    public TimeSpan CongeladoHasta { get; private set; }
+
     // Un humano desconectado o que abandonó: la IA mueve su personaje
     public bool ControlIa { get; private set; }
 
@@ -101,6 +104,16 @@ public abstract class Entidad
         return PuedeParticipar && tiempoSimulacion < InvencibleHasta;
     }
 
+    public bool EstaCongelado(TimeSpan tiempoSimulacion)
+    {
+        return PuedeParticipar && tiempoSimulacion < CongeladoHasta;
+    }
+
+    internal void Congelar(TimeSpan hasta)
+    {
+        CongeladoHasta = hasta;
+    }
+
     internal void CambiarPosicion(Casilla destino)
     {
         Posicion = destino;
@@ -122,6 +135,7 @@ public abstract class Entidad
         VidasRestantes--;
         ReaparicionPendiente = VidasRestantes > 0;
         InvencibleHasta = TimeSpan.Zero;
+        CongeladoHasta = TimeSpan.Zero;
 
         return true;
     }

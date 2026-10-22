@@ -4,8 +4,8 @@ using PacmanDominio.Juego.Items;
 
 namespace PacmanLogicaNegocios.Juego.Sistemas;
 
-// Cajas de objetos (aparición y recogida), uso con el botón de acción y
-// vencimiento de los efectos.
+// Cajas de objetos (aparición y recogida), uso con el botón de acción,
+// trampas de hielo y vencimiento de los efectos.
 internal static class SistemaObjetos
 {
     public static void AparecerCajas(ContextoMotor contexto)
@@ -114,6 +114,38 @@ internal static class SistemaObjetos
             actor.Posicion.Fila, actor.Posicion.Columna, objeto.IdObjeto));
 
         return true;
+    }
+
+    // El primer Pac-Man que pisa una trampa queda congelado y la trampa desaparece.
+    // El escudo y la invencibilidad de la reaparición también protegen de ellas.
+    public static void ActivarTrampas(ContextoMotor contexto)
+    {
+        var partida = contexto.Partida;
+
+        foreach (var trampa in partida.Trampas.ToList())
+        {
+            if (partida.Terminada)
+            {
+                return;
+            }
+
+            var victima = partida.Pacmans.FirstOrDefault(pacman =>
+                pacman.PuedeParticipar &&
+                Rutas.MismaCasilla(pacman.Posicion, trampa.Posicion) &&
+                !pacman.EsInvencible(contexto.Tiempo) &&
+                !contexto.EstaProtegido(pacman));
+
+            if (victima == null)
+            {
+                continue;
+            }
+
+            partida.QuitarTrampa(trampa.IdTrampa);
+            partida.CongelarActor(victima.IdPersonaje, contexto.Tiempo + ReglasJuego.DuracionCongeladoTrampa);
+            contexto.Registrar(new EventoJuego(
+                TipoEventoJuego.TrampaActivada, trampa.IdPersonajeOrigen, victima.IdPersonaje,
+                trampa.Posicion.Fila, trampa.Posicion.Columna));
+        }
     }
 
     public static void VencerEfectos(ContextoMotor contexto)

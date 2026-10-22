@@ -1,4 +1,5 @@
 import { TDificultad } from '../modelos/dificultad.model';
+import { TObjeto } from '../modelos/objeto.model';
 import { IRespuesta } from '../modelos/respuesta.model';
 import { TUsuario } from '../modelos/usuario.model';
 import { URL_API } from './Configuracion';
@@ -96,6 +97,11 @@ export function validarSesion(): Promise<IRespuesta<TUsuario>> {
 
 export function listarDificultades(): Promise<IRespuesta<TDificultad[]>> {
     return solicitar<TDificultad[]>('GET', 'api/Dificultad/Listar');
+}
+
+// Catálogo de objetos de las cajas, para mostrar sus nombres en la partida
+export function listarObjetos(): Promise<IRespuesta<TObjeto[]>> {
+    return solicitar<TObjeto[]>('GET', 'api/Objeto/Listar');
 }
 
 export function registrar(correoElectronico: string, contrasena: string): Promise<IRespuesta<TUsuario>> {

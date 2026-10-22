@@ -5,7 +5,7 @@ using PacmanDominio.Juego.Items;
 
 namespace PacmanLogicaNegocios.Juego.Efectos;
 
-// PROVISIONAL (objeto Escudo): quien lo usa no puede ser atrapado ni comido.
+// Objeto Escudo (Pac-Man): quien lo usa no puede ser atrapado.
 public sealed class EfectoEscudo : IEfectoObjeto
 {
     public string TipoEfecto

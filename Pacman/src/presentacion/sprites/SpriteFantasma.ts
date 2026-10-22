@@ -1,4 +1,4 @@
-import { GameObjects, Scene } from 'phaser';
+import { GameObjects, Scene, TintModes } from 'phaser';
 import {
     ANIM_FANTASMA_ASUSTADO,
     ANIM_FANTASMA_ASUSTADO_FIN,
@@ -54,6 +54,31 @@ export class SpriteFantasma extends GameObjects.Container {
         this.aplicar();
 
         return this;
+    }
+
+    // Tinte por efectos (hielo, ralentizar) sobre cuerpo y cara; null lo quita
+    tenir(color: number | null, modo: TintModes = TintModes.MULTIPLY): this {
+        for (const parte of [this.cuerpo, this.cara]) {
+            if (color === null) {
+                parte.clearTint().setTintMode(TintModes.MULTIPLY);
+            } else {
+                parte.setTint(color).setTintMode(modo);
+            }
+        }
+
+        return this;
+    }
+
+    // 1 = normal, 0 = detenido (congelado)
+    setVelocidadAnimacion(factor: number): this {
+        this.cuerpo.anims.timeScale = factor;
+
+        return this;
+    }
+
+    // Textura y cuadro del cuerpo, para dibujar el rastro de la velocidad
+    cuadroCuerpo(): { textura: string; cuadro: string | number } {
+        return { textura: this.cuerpo.texture.key, cuadro: this.cuerpo.frame.name };
     }
 
     private aplicar(): void {

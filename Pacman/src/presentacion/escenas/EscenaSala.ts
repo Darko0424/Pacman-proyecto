@@ -140,6 +140,12 @@ export class EscenaSala extends Scene {
             cancelarEstado();
         });
 
+        // Volvió a una sala con la partida en curso (reconexión): directo al juego
+        if (this.sala.estado === EstadoSala.Jugando || this.sala.estado === EstadoSala.Transicion) {
+            this.irAlJuego();
+            return;
+        }
+
         this.mostrar(this.sala);
         this.cargarDificultades();
     }

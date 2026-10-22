@@ -158,7 +158,7 @@ internal static class SistemaColisiones
                     if (!contexto.EstaProtegido(fantasma) && !fantasma.EsInvencible(tiempo))
                     {
                         // Los puntos van antes: perder la última vida puede terminar el nivel
-                        partida.SumarPuntos(pacman.IdPersonaje, ReglasJuego.PuntosFantasmaComido);
+                        partida.SumarPuntos(pacman.IdPersonaje, contexto.Puntos(pacman, ReglasJuego.PuntosFantasmaComido));
                         partida.RegistrarFantasmaComido(pacman.IdPersonaje);
                         contexto.Registrar(new EventoJuego(
                             TipoEventoJuego.FantasmaComido, pacman.IdPersonaje, fantasma.IdPersonaje,
@@ -176,7 +176,7 @@ internal static class SistemaColisiones
                     continue;
                 }
 
-                partida.SumarPuntos(fantasma.IdPersonaje, ReglasJuego.PuntosPacManAtrapado);
+                partida.SumarPuntos(fantasma.IdPersonaje, contexto.Puntos(fantasma, ReglasJuego.PuntosPacManAtrapado));
                 partida.RegistrarPacManAtrapado(fantasma.IdPersonaje);
                 contexto.Registrar(new EventoJuego(
                     TipoEventoJuego.PacManAtrapado, fantasma.IdPersonaje, pacman.IdPersonaje,

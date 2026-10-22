@@ -22,6 +22,10 @@ export const COLOR = {
     ROSA: 0xff6b97,
     CELESTE: 0x4da6ff,
 
+    // Efectos de los objetos
+    HIELO: 0xb4e6ff,
+    LENTO: 0xa58cff,
+
     GRIS: 0x7e7e8f,
     GRIS_CLARO: 0xc2c2d1,
     BLANCO: 0xffffff,

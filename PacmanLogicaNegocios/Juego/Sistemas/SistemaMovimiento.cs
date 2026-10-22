@@ -11,7 +11,8 @@ internal static class SistemaMovimiento
 {
     public static double CalcularVelocidad(ContextoMotor contexto, Entidad actor)
     {
-        if (!actor.PuedeParticipar)
+        // Pisó una trampa de hielo
+        if (!actor.PuedeParticipar || actor.EstaCongelado(contexto.Tiempo))
         {
             return 0;
         }

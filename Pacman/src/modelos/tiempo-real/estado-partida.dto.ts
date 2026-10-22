@@ -17,6 +17,8 @@ interface ActorDto {
     eliminado: boolean;
     reaparicionPendiente: boolean;
     esInvencible: boolean;
+    // Pisó una trampa de hielo (el objeto Hielo se ve en efectos)
+    congelado: boolean;
     idObjetoGuardado: number | null;
     puntuacion: number;
 }
@@ -32,6 +34,14 @@ export interface CajaDto {
     idCaja: number;
     fila: number;
     columna: number;
+}
+
+export interface TrampaDto {
+    idTrampa: number;
+    fila: number;
+    columna: number;
+    idPersonajeOrigen: number;
+    finSegundos: number;
 }
 
 export interface EfectoDto {
@@ -69,6 +79,8 @@ export interface EstadoPartidaDto {
     fantasmas: FantasmaDto[];
     // Solo las cajas que siguen en el mapa
     cajas: CajaDto[];
+    // Trampas de hielo de los fantasmas que nadie ha pisado
+    trampas: TrampaDto[];
     efectos: EfectoDto[];
     // Lo que pasó desde el estado anterior (sonidos y animaciones)
     eventos: EventoDto[];

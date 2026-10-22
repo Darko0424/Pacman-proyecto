@@ -36,7 +36,7 @@ internal static class SistemaPuntaje
             // Los puntos van antes: la última bola termina el nivel
             partida.SumarPuntos(
                 pacman.IdPersonaje,
-                esDePoder ? ReglasJuego.PuntosBolaPoder : ReglasJuego.PuntosBola);
+                contexto.Puntos(pacman, esDePoder ? ReglasJuego.PuntosBolaPoder : ReglasJuego.PuntosBola));
 
             if (partida.ConsumirPunto(pacman.IdPersonaje) == null)
             {

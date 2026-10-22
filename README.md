@@ -162,17 +162,20 @@ una semilla (útil para pruebas).
 
 Todos los valores están en `ReglasJuego.cs` para ajustarlos sin tocar la lógica.
 
-### Objetos (provisionales)
+### Objetos
 
 | Objeto | Bando | Efecto | Clase |
 | --- | --- | --- | --- |
-| Turbo | Pac-Man | `VELOCIDAD`: quien lo usa va 1.5 veces más rápido | `EfectoVelocidad` |
-| Escudo | Pac-Man | `ESCUDO`: no puede ser atrapado | `EfectoEscudo` |
-| Impulso | Fantasma | `VELOCIDAD` | `EfectoVelocidad` |
-| Hielo | Fantasma | `CONGELAR`: el bando rival queda inmóvil | `EfectoCongelar` |
+| Turbo | Pac-Man | `VELOCIDAD`: quien lo usa va 1.5 veces más rápido (5 s) | `EfectoVelocidad` |
+| Escudo | Pac-Man | `ESCUDO`: no puede ser atrapado ni caer en trampas (4 s) | `EfectoEscudo` |
+| Hielo | Pac-Man | `CONGELAR`: todos los fantasmas quedan inmóviles (3 s) | `EfectoCongelar` |
+| Puntos dobles | Pac-Man | `PUNTOS_DOBLES`: gana el doble por bolas y fantasmas (8 s) | `EfectoPuntosDobles` |
+| Ralentizar | Fantasma | `RALENTIZAR`: los Pac-Man van a la mitad de velocidad (4 s) | `EfectoRalentizar` |
+| Teletransporte | Fantasma | `TELETRANSPORTE`: salta hasta 6 casillas hacia adelante, sin atravesar muros | `EfectoTeletransporte` |
+| Trampa de hielo | Fantasma | `TRAMPA`: deja una trampa en su casilla (15 s); el Pac-Man que la pisa queda congelado 3 s | `EfectoTrampa` |
 
 Para agregar un objeto: una clase que implemente `IEfectoObjeto` (solo los métodos
-que use: `MultiplicadorVelocidad`, `Protege`, `Aplicar`, `Retirar`), agregarla a
+que use: `MultiplicadorVelocidad`, `MultiplicadorPuntos`, `Protege`, `Aplicar`, `Retirar`), agregarla a
 `MotorPartida.EfectosPredeterminados` y agregar su fila a `objetos` con la clave en
 `efecto`. Los objetos cuyo efecto no tiene clase se ignoran.
 

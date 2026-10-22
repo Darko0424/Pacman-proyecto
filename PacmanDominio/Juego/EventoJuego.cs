@@ -17,7 +17,9 @@ public enum TipoEventoJuego
     CajaRecogida = 9,
     ObjetoUsado = 10,
     EfectoTerminado = 11,
-    NivelTerminado = 12
+    NivelTerminado = 12,
+    // IdPersonaje: el fantasma que la puso; IdOtroPersonaje: el Pac-Man congelado
+    TrampaActivada = 13
 }
 
 // IdPersonaje es quien provoca el evento; IdOtroPersonaje, el afectado si lo hay.

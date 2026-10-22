@@ -82,6 +82,21 @@ export function cuadroBolaFantasma(color: string): number {
     return PRIMER_CUADRO_BOLA + aspectoFantasma(color).cara;
 }
 
+// ---------- Personajes de la partida ----------
+
+// personajes.id_personaje -> personajes.color (06_DatosCatalogos.sql)
+const COLOR_PERSONAJE: Record<number, string> = {
+    1: 'AMARILLO',
+    2: 'VERDE',
+    3: 'ROJO',
+    4: 'ROSA',
+    5: 'CELESTE',
+};
+
+export function colorPersonaje(idPersonaje: number): string {
+    return COLOR_PERSONAJE[idPersonaje] ?? 'ROJO';
+}
+
 // ---------- Frutas y puntos ----------
 
 export const CUADRO_ITEM = {

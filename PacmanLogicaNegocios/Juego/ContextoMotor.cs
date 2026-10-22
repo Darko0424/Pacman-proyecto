@@ -79,6 +79,17 @@ internal sealed class ContextoMotor
             vigente.Implementacion.Protege(Partida, vigente.Efecto, actor));
     }
 
+    // Puntos que gana el actor con los efectos vigentes (por ejemplo, puntos dobles)
+    public int Puntos(Entidad actor, int puntos)
+    {
+        foreach (var (efecto, implementacion) in EfectosVigentes())
+        {
+            puntos *= implementacion.MultiplicadorPuntos(Partida, efecto, actor);
+        }
+
+        return puntos;
+    }
+
     public void Registrar(EventoJuego evento)
     {
         Eventos.Add(evento);

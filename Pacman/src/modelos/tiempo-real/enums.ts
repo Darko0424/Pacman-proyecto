@@ -57,5 +57,7 @@ export const TipoEventoJuego = {
     ObjetoUsado: 10,
     EfectoTerminado: 11,
     NivelTerminado: 12,
+    // idPersonaje: el fantasma que la puso; idOtroPersonaje: el Pac-Man congelado
+    TrampaActivada: 13,
 } as const;
 export type TipoEventoJuego = (typeof TipoEventoJuego)[keyof typeof TipoEventoJuego];

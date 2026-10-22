@@ -5,7 +5,7 @@ using PacmanDominio.Juego.Items;
 
 namespace PacmanLogicaNegocios.Juego.Efectos;
 
-// PROVISIONAL (objeto Hielo): todo el bando rival queda inmóvil.
+// Objeto Hielo (Pac-Man): todos los fantasmas quedan inmóviles.
 public sealed class EfectoCongelar : IEfectoObjeto
 {
     public string TipoEfecto

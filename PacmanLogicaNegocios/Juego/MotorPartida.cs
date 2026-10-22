@@ -19,12 +19,16 @@ public sealed class MotorPartida
     private readonly Dictionary<byte, ControladorHumano> _humanos = new();
     private TimeSpan _pendiente = TimeSpan.Zero;
 
-    // Efectos de los objetos provisionales; para un objeto nuevo, agregar su clase aquí
+    // Un efecto por clave de objetos.efecto; para un objeto nuevo, agregar su clase aquí
     public static IReadOnlyList<IEfectoObjeto> EfectosPredeterminados { get; } = new IEfectoObjeto[]
     {
         new EfectoVelocidad(),
         new EfectoEscudo(),
-        new EfectoCongelar()
+        new EfectoCongelar(),
+        new EfectoPuntosDobles(),
+        new EfectoRalentizar(),
+        new EfectoTeletransporte(),
+        new EfectoTrampa()
     };
 
     public EstadoPartida Partida
@@ -232,6 +236,7 @@ public sealed class MotorPartida
         }
 
         SistemaColisiones.Resolver(_contexto, previas);
+        SistemaObjetos.ActivarTrampas(_contexto);
         SistemaPuntaje.ComerBolas(_contexto);
         SistemaObjetos.RecogerCajas(_contexto);
         SistemaObjetos.AparecerCajas(_contexto);
