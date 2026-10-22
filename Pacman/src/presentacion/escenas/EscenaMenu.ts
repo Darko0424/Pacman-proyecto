@@ -5,7 +5,7 @@ import { Boton } from '../ui/Boton';
 import { COLOR, estiloTexto } from '../ui/Paleta';
 import { Aviso, dibujarPantallaSesion } from './FlujoSesion';
 
-// Menú principal: se llega después de iniciar sesión y desde "VOLVER" en Salas
+// Menú principal después de iniciar sesión y al volver de las consultas o salas.
 export class EscenaMenu extends Scene {
     private botones: Boton[] = [];
     private aviso: Aviso;
@@ -32,23 +32,31 @@ export class EscenaMenu extends Scene {
         this.add.text(centro, 230, `Hola, ${sesion.usuario.nombreUsuario}`, estiloTexto(14, COLOR.PACMAN)).setOrigin(0.5);
 
         this.botones = [
-            new Boton(this, centro, 330, 'JUGAR EN LINEA', {
+            new Boton(this, centro, 300, 'JUGAR EN LINEA', {
                 ancho: 360,
                 color: COLOR.PACMAN,
                 alPulsar: () => this.scene.start('EscenaListaSalas'),
             }),
-            new Boton(this, centro, 420, 'CAMBIAR NOMBRE', {
+            new Boton(this, centro, 380, 'RANKING', {
+                ancho: 360,
+                alPulsar: () => this.scene.start('EscenaRanking'),
+            }),
+            new Boton(this, centro, 460, 'HISTORIAL', {
+                ancho: 360,
+                alPulsar: () => this.scene.start('EscenaHistorial'),
+            }),
+            new Boton(this, centro, 540, 'CAMBIAR NOMBRE', {
                 ancho: 360,
                 alPulsar: () => this.scene.start('EscenaNombre'),
             }),
-            new Boton(this, centro, 510, 'CERRAR SESION', {
+            new Boton(this, centro, 620, 'CERRAR SESION', {
                 ancho: 360,
                 color: COLOR.ROJO,
                 alPulsar: () => this.salir(),
             }),
         ];
 
-        this.aviso = new Aviso(this, 600);
+        this.aviso = new Aviso(this, 692);
     }
 
     private async salir(): Promise<void> {

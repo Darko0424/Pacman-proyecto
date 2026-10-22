@@ -4,14 +4,14 @@
     {
       "type": "edge",
       "request": "launch",
-      "name": "localhost (Edge)",
+      "name": "Pacman (Edge)",
       "url": "http://localhost:8080",
       "webRoot": "${workspaceFolder}"
     },
     {
       "type": "chrome",
       "request": "launch",
-      "name": "localhost (Chrome)",
+      "name": "Pacman (Chrome)",
       "url": "http://localhost:8080",
       "webRoot": "${workspaceFolder}"
     }

@@ -4,6 +4,11 @@ import { IRespuesta } from '../modelos/respuesta.model';
 import { TUsuario } from '../modelos/usuario.model';
 import { URL_API } from './Configuracion';
 import { SugerenciasNombre } from '../modelos/sugerencias-nombre.model';
+import { RankingEntrada, RolRanking } from '../modelos/ranking-entrada.model';
+import { RankingTotalEntrada } from '../modelos/ranking-total-entrada.model';
+import { HistorialEntrada } from '../modelos/historial-entrada.model';
+import { HistorialRonda } from '../modelos/historial-ronda.model';
+import { ProgresoJugador } from '../modelos/progreso-jugador.model';
 
 
 // Lo que devuelve api/Usuario/IniciarSesion (clsSesionIniciada)
@@ -130,4 +135,34 @@ export function asignarNombre(nombreUsuario: string): Promise<IRespuesta<TUsuari
 export async function cerrarSesion(): Promise<void> {
     await solicitar<boolean>('POST', 'api/Usuario/CerrarSesion');
     borrarSesion();
+}
+
+// ---------- Ranking e historial ----------
+
+export function listarRanking(rol: RolRanking): Promise<IRespuesta<RankingEntrada[]>> {
+    return solicitar<RankingEntrada[]>('GET', `api/Ranking/Listar/${encodeURIComponent(rol)}`);
+}
+
+export function listarRankingTotal(): Promise<IRespuesta<RankingTotalEntrada[]>> {
+    return solicitar<RankingTotalEntrada[]>('GET', 'api/Ranking/Total');
+}
+
+export function obtenerMiPosicion(rol: RolRanking): Promise<IRespuesta<RankingEntrada>> {
+    return solicitar<RankingEntrada>('GET', `api/Ranking/MiPosicion/${encodeURIComponent(rol)}`);
+}
+
+export function obtenerMiPosicionTotal(): Promise<IRespuesta<RankingTotalEntrada>> {
+    return solicitar<RankingTotalEntrada>('GET', 'api/Ranking/MiPosicionTotal');
+}
+
+export function listarHistorial(): Promise<IRespuesta<HistorialEntrada[]>> {
+    return solicitar<HistorialEntrada[]>('GET', 'api/Historial/Listar');
+}
+
+export function listarRondasHistorial(idPartida: number): Promise<IRespuesta<HistorialRonda[]>> {
+    return solicitar<HistorialRonda[]>('GET', `api/Historial/Rondas/${idPartida}`);
+}
+
+export function obtenerProgreso(): Promise<IRespuesta<ProgresoJugador>> {
+    return solicitar<ProgresoJugador>('GET', 'api/Historial/Progreso');
 }

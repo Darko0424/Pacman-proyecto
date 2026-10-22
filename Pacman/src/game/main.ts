@@ -12,6 +12,8 @@ import { EscenaSala } from '../presentacion/escenas/EscenaSala';
 import { EscenaVerificacion } from '../presentacion/escenas/EscenaVerificacion';
 import { EscenaMenu } from '../presentacion/escenas/EscenaMenu';
 import { EscenaJuego } from '../presentacion/escenas/EscenaJuego';
+import { EscenaRanking } from '../presentacion/escenas/EscenaRanking';
+import { EscenaHistorial } from '../presentacion/escenas/EscenaHistorial';
 
 
 //  Find out more information about the Game Config at:
@@ -41,6 +43,8 @@ const config: Phaser.Types.Core.GameConfig = {
         EscenaVerificacion,
         EscenaNombre,
         EscenaMenu,
+        EscenaRanking,
+        EscenaHistorial,
         EscenaGaleriaSprites,
         EscenaListaSalas,
         EscenaSala,
