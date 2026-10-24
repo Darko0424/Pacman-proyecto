@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Pac-Man Multijugador</string>
+    <string name="title_activity_main">Pac-Man Multijugador</string>
+    <string name="package_name">com.pacman.multijugador</string>
+    <string name="custom_url_scheme">com.pacman.multijugador</string>
+</resources>

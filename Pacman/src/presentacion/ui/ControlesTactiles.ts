@@ -11,6 +11,7 @@ const LADO_BOTON = 64;
 // Solo avisan la dirección elegida; quien los usa decide si la envía.
 export class ControlesTactiles {
     private inicio: { x: number; y: number } | null = null;
+    private ladoBoton = LADO_BOTON;
 
     constructor(
         private readonly escena: Scene,
@@ -29,9 +30,10 @@ export class ControlesTactiles {
     }
 
     // Cruceta de cuatro botones centrada en (x, y)
-    crearCruceta(x: number, y: number): GameObjects.Container {
+    crearCruceta(x: number, y: number, lado = LADO_BOTON): GameObjects.Container {
+        this.ladoBoton = lado;
         const cruceta = this.escena.add.container(x, y);
-        const paso = LADO_BOTON + 6;
+        const paso = lado + 6;
 
         cruceta.add([
             this.crearBoton(0, -paso, '^', Direccion.Arriba),
@@ -45,9 +47,9 @@ export class ControlesTactiles {
 
     private crearBoton(x: number, y: number, texto: string, direccion: Direccion): GameObjects.Container {
         const boton = this.escena.add.container(x, y);
-        const fondo = new Recuadro(this.escena, 0, 0, LADO_BOTON, LADO_BOTON, 10, true)
+        const fondo = new Recuadro(this.escena, 0, 0, this.ladoBoton, this.ladoBoton, 10, true)
             .dibujar(COLOR.PANEL, COLOR.MURO_CLARO);
-        const zona = this.escena.add.zone(0, 0, LADO_BOTON, LADO_BOTON).setInteractive();
+        const zona = this.escena.add.zone(0, 0, this.ladoBoton, this.ladoBoton).setInteractive();
 
         // Se reacciona al tocar, no al soltar: en el juego cada instante cuenta
         zona.on('pointerdown', () => {

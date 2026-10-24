@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { GameObjects, Scene } from 'phaser';
 import { Bando, CodigoRol, EstadoSala, FrecuenciaCajas } from '../../modelos/tiempo-real/enums';
 import { ConfiguracionSalaDto, JugadorSalaDto, SalaDto } from '../../modelos/tiempo-real/sala.dto';
@@ -97,7 +98,7 @@ export class EscenaSala extends Scene {
     }
 
     create(): void {
-        const { width } = this.scale;
+        const width = ANCHO_INTERFAZ;
 
         dibujarMarco(this);
 

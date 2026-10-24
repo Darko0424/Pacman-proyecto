@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { Scene, Time } from 'phaser';
 import { guardarSesion, reenviarCodigo, verificarCorreo } from '../../servicios/ClienteApi';
 import { Boton } from '../ui/Boton';
@@ -36,7 +37,7 @@ export class EscenaVerificacion extends Scene {
     }
 
     create(): void {
-        const centro = this.scale.width / 2;
+        const centro = ANCHO_INTERFAZ / 2;
 
         this.ocupado = false;
         this.espera = 0;

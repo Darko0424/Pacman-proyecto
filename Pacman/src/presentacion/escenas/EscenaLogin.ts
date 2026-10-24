@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { Scene } from 'phaser';
 import {
     CODIGO_CORREO_NO_VERIFICADO,
@@ -28,14 +29,14 @@ export class EscenaLogin extends Scene {
     }
 
     create(): void {
-        const centro = this.scale.width / 2;
+        const centro = ANCHO_INTERFAZ / 2;
 
         this.ocupado = false;
 
         dibujarPantallaSesion(this, 'INICIAR SESION');
         crearPanel(this, centro - 260, 220, 520, 250);
 
-        this.add.text(centro - 220, 250, 'Correo o usuario', estiloTexto(12, COLOR.MURO_CLARO));
+        this.add.text(centro - 220, 250, 'Correo o usuario', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
         this.campoUsuario = crearCampo(this, centro, 300, {
             ejemplo: 'tucorreo@gmail.com',
             autocompletar: 'username',
@@ -43,7 +44,7 @@ export class EscenaLogin extends Scene {
             alEnter: () => this.campoContrasena.focus(),
         });
 
-        this.add.text(centro - 220, 360, 'Contraseña', estiloTexto(12, COLOR.MURO_CLARO));
+        this.add.text(centro - 220, 360, 'Contraseña', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
         this.campoContrasena = crearCampo(this, centro, 410, {
             tipo: 'password',
             ejemplo: '********',

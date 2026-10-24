@@ -1,5 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
 import { COLOR } from './Paleta';
+import { prepararPantalla, ANCHO_INTERFAZ, ALTO_INTERFAZ } from './PantallaAdaptable';
 
 // Rectángulo de esquinas redondeadas que se puede volver a pintar.
 // Se dibuja con Graphics porque en Phaser 4.0.0 Rectangle.setRounded con
@@ -52,8 +53,15 @@ export function crearPanel(
 
 // Marco morado de toda la pantalla como el del laberinto
 export function dibujarMarco(escena: Scene): void {
-    const { width, height } = escena.scale;
+    const formulario = ['EscenaLogin', 'EscenaRegistro', 'EscenaVerificacion', 'EscenaNombre']
+        .includes(escena.sys.settings.key);
+    prepararPantalla(escena, formulario ? 'formulario' : 'interfaz');
 
     escena.cameras.main.setBackgroundColor(COLOR.FONDO);
-    escena.add.rectangle(width / 2, height / 2, width - 16, height - 16).setStrokeStyle(16, COLOR.MARCO);
+    const marco = escena.add.rectangle(
+        ANCHO_INTERFAZ / 2, ALTO_INTERFAZ / 2, escena.scale.width - 16, escena.scale.height - 16
+    ).setStrokeStyle(16, COLOR.MARCO);
+    const ajustar = () => marco.setSize(escena.scale.width - 16, escena.scale.height - 16);
+    escena.scale.on('resize', ajustar);
+    escena.events.once('shutdown', () => escena.scale.off('resize', ajustar));
 }

@@ -378,3 +378,19 @@ El perfil `http` solo escucha en `localhost`. Para conectar un celular de la mis
 red, arrancar con el perfil `red-local` (`dotnet run --launch-profile red-local`),
 que escucha en `http://0.0.0.0:5253`, y usar la IP de la computadora como servidor.
 Puede que Windows pida permitir el acceso en el firewall.
+
+## APK de prueba para Android
+
+El proyecto nativo está en `Pacman/android`, con su configuración en
+`Pacman/capacitor.config.json`. Desde `Pacman`, ejecutar:
+
+```powershell
+npm run android:apk -- -ServidorApi http://IP-DE-TU-PC:5253
+```
+
+El APK queda en `Pacman/descargas/PacmanMultijugador-debug.apk`. Para probarlo,
+iniciar `PacmanApi` con el perfil `red-local` y conectar los celulares a la misma
+red Wi-Fi que la PC. La API de C# y SQL Server siguen funcionando en la PC.
+
+Consultar [la guía de Android](Pacman/ANDROID.md) para requisitos, instalación y
+conexión. La dirección de la red y los APK generados quedan fuera de Git.

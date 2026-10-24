@@ -1,0 +1,12 @@
+{
+  "appId": "com.pacman.multijugador",
+  "appName": "Pac-Man Multijugador",
+  "webDir": "dist",
+  "backgroundColor": "#272736",
+  "plugins": {
+    "SystemBars": {
+      "hidden": true,
+      "insetsHandling": "disable"
+    }
+  }
+}

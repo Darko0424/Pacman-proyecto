@@ -17,16 +17,8 @@ import { ControlesTactiles } from '../ui/ControlesTactiles';
 import { HUD } from '../ui/HUD';
 import { COLOR, estiloTexto } from '../ui/Paleta';
 import { Recuadro } from '../ui/Panel';
-
-// Distribución de la pantalla (1366 x 768, celular acostado): HUD y cruceta a
-// la izquierda, mapa al centro y el botón del objeto a la derecha
-const MARGEN = 12;
-const PANEL_ANCHO = 304;
-const MAPA_X = 16 + PANEL_ANCHO + 16;
-const MAPA_Y = MARGEN;
-const MAPA_ANCHO_MAXIMO = 678;
-const MAPA_ALTO_MAXIMO = 744;
-const PANEL_DERECHO_X = MAPA_X + MAPA_ANCHO_MAXIMO + 16;
+import { prepararPantalla } from '../ui/PantallaAdaptable';
+import { calcularDistribucionJuego } from '../ui/DistribucionJuego';
 
 // GestorSalas lo fija en ConfiguracionPartida.CantidadNiveles
 const NIVELES_POR_DEFECTO = 5;
@@ -70,6 +62,11 @@ export class EscenaJuego extends Scene {
     private ultimaDireccion: Direccion = Direccion.Ninguna;
     // Nivel y estado de la sala del último cartel de fin mostrado
     private finMostrado = '';
+    private distribucion = calcularDistribucionJuego(1366, 768);
+    private tamanoPantalla = '';
+    private readonly zonaMapa = new Geom.Rectangle();
+    private tactiles: ControlesTactiles | null = null;
+    private cruceta: GameObjects.Container | null = null;
 
     constructor() {
         super('EscenaJuego');
@@ -83,20 +80,20 @@ export class EscenaJuego extends Scene {
         this.cuentaRegresiva = null;
         this.ultimaDireccion = Direccion.Ninguna;
         this.finMostrado = '';
+        this.tamanoPantalla = '';
+        this.tactiles = null;
+        this.cruceta = null;
     }
 
     create(): void {
+        prepararPantalla(this, 'juego');
         this.cameras.main.setBackgroundColor(COLOR.FONDO);
 
         this.sonido = new GestorSonido(this);
-        this.hud = new HUD(this, {
-            izquierda: { x: 16, y: MARGEN, ancho: PANEL_ANCHO, alto: MAPA_ALTO_MAXIMO },
-            derecha: { x: PANEL_DERECHO_X, y: MARGEN, ancho: this.scale.width - 16 - PANEL_DERECHO_X, alto: MAPA_ALTO_MAXIMO },
-            alUsarObjeto: () => this.usarObjeto(),
-            alSalir: () => this.salir(),
-        });
-
+        this.ajustarDistribucion();
         this.crearControles();
+        this.scale.on('resize', this.ajustarDistribucion, this);
+        this.events.once('shutdown', () => this.scale.off('resize', this.ajustarDistribucion, this));
         this.suscribirse();
         this.cargarInicial();
         this.cargarObjetos();
@@ -224,15 +221,7 @@ export class EscenaJuego extends Scene {
         this.sonido.detenerMusica();
         this.quitarAviso();
 
-        // Los roles cambian en cada nivel: se vuelven a crear los personajes
-        this.vistas.forEach((vista) => vista.destruir());
-        this.vistas.clear();
-        this.laberinto?.destruir();
-
-        const tamano = Math.floor(Math.min(MAPA_ANCHO_MAXIMO / nivel.columnas, MAPA_ALTO_MAXIMO / nivel.filas));
-        const x = MAPA_X + (MAPA_ANCHO_MAXIMO - nivel.columnas * tamano) / 2;
-        const y = MAPA_Y + (MAPA_ALTO_MAXIMO - nivel.filas * tamano) / 2;
-        this.laberinto = new VistaLaberinto(this, nivel, x, y, tamano);
+        this.dibujarMapa(nivel);
 
         // El servidor recuerda la última dirección; en un nivel nuevo empieza sin ninguna
         this.ultimaDireccion = Direccion.Ninguna;
@@ -267,13 +256,8 @@ export class EscenaJuego extends Scene {
     // ---------- Controles ----------
 
     private crearControles(): void {
-        const zonaMapa = new Geom.Rectangle(MAPA_X, MAPA_Y, MAPA_ANCHO_MAXIMO, MAPA_ALTO_MAXIMO);
-        const tactiles = new ControlesTactiles(this, zonaMapa, (direccion) => this.enviarDireccion(direccion));
-
-        // La cruceta solo en pantallas táctiles; en la PC sobran las flechas
-        if (this.sys.game.device.input.touch) {
-            tactiles.crearCruceta(16 + PANEL_ANCHO / 2, MARGEN + MAPA_ALTO_MAXIMO - 140);
-        }
+        this.tactiles = new ControlesTactiles(this, this.zonaMapa, (direccion) => this.enviarDireccion(direccion));
+        this.ajustarCruceta();
 
         this.input.keyboard?.on('keydown', (evento: KeyboardEvent) => {
             const direccion = TECLAS[evento.code];
@@ -316,6 +300,81 @@ export class EscenaJuego extends Scene {
     }
 
     // ---------- Dibujo ----------
+
+    private ajustarDistribucion(): void {
+        const tamano = `${this.scale.width}:${this.scale.height}:${this.scale.displaySize.width}`;
+
+        if (tamano === this.tamanoPantalla) {
+            return;
+        }
+
+        this.tamanoPantalla = tamano;
+        const anterior = this.distribucion;
+        const escala = this.scale.displaySize.width / this.scale.width;
+        this.distribucion = calcularDistribucionJuego(this.scale.width, this.scale.height, escala);
+        const { izquierda, derecha, mapa } = this.distribucion;
+        this.cameras.main.setViewport(0, 0, this.scale.width, this.scale.height).setScroll(0, 0);
+        this.zonaMapa.setTo(mapa.x, mapa.y, mapa.ancho, mapa.alto);
+        this.hud?.destruir();
+        this.hud = new HUD(this, {
+            izquierda,
+            derecha,
+            alUsarObjeto: () => this.usarObjeto(),
+            alSalir: () => this.salir(),
+        });
+        this.ajustarCruceta();
+
+        if (this.estado.nivel) {
+            this.dibujarMapa(this.estado.nivel);
+        }
+
+        if (this.aviso) {
+            this.aviso.x = mapa.x + mapa.ancho / 2;
+            this.aviso.y += mapa.y - anterior.mapa.y;
+        }
+
+        const estado = this.estado.estado;
+
+        if (estado) {
+            this.hud.actualizar(
+                estado,
+                this.estado.actores(estado),
+                this.estado.miActor(estado),
+                this.estado.sala?.cantidadNiveles ?? NIVELES_POR_DEFECTO,
+                this.objetos,
+            );
+        }
+    }
+
+    private ajustarCruceta(): void {
+        this.cruceta?.destroy();
+        this.cruceta = null;
+
+        if (!this.tactiles || !this.sys.game.device.input.touch) {
+            return;
+        }
+
+        const zona = this.distribucion.izquierda;
+        const escala = this.scale.displaySize.width / this.scale.width;
+        const lado = Math.min((zona.ancho - 36) / 3, Math.max(64, 44 / escala));
+        this.cruceta = this.tactiles.crearCruceta(
+            zona.x + zona.ancho / 2,
+            zona.y + zona.alto - (lado * 1.5 + 6) - 16,
+            lado
+        );
+    }
+
+    private dibujarMapa(nivel: NivelDto): void {
+        this.vistas.forEach(vista => vista.destruir());
+        this.vistas.clear();
+        this.laberinto?.destruir();
+        const zona = this.distribucion.mapa;
+        const tamano = Math.floor(Math.min(zona.ancho / nivel.columnas, zona.alto / nivel.filas));
+        const x = zona.x + (zona.ancho - nivel.columnas * tamano) / 2;
+        const y = zona.y + (zona.alto - nivel.filas * tamano) / 2;
+        this.laberinto = new VistaLaberinto(this, nivel, x, y, tamano);
+        this.laberinto.actualizarPuntos(this.estado.estado?.puntosConsumidos ?? []);
+    }
 
     private obtenerVista(idPersonaje: number, bando: Bando, esPropio: boolean): VistaActor {
         let vista = this.vistas.get(idPersonaje);
@@ -370,7 +429,7 @@ export class EscenaJuego extends Scene {
         const rol = mio?.bando === Bando.Fantasma ? 'ERES FANTASMA' : 'ERES PAC-MAN';
         const total = this.estado.sala?.cantidadNiveles ?? NIVELES_POR_DEFECTO;
 
-        this.mostrarAviso(`NIVEL ${estado.numeroNivel}/${total}`, rol, [], 0, MAPA_Y + 80);
+        this.mostrarAviso(`NIVEL ${estado.numeroNivel}/${total}`, rol, [], 0, this.distribucion.mapa.y + 80);
 
         const aviso = this.aviso;
         this.tweens.add({
@@ -461,7 +520,10 @@ export class EscenaJuego extends Scene {
         const alto = 112 + (lineas.length > 0 ? 16 + lineas.length * 26 : 0) + pie;
         const arriba = -alto / 2;
         const aviso = this.add
-            .container(MAPA_X + MAPA_ANCHO_MAXIMO / 2, centroY ?? MAPA_Y + MAPA_ALTO_MAXIMO / 2)
+            .container(
+                this.distribucion.mapa.x + this.distribucion.mapa.ancho / 2,
+                centroY ?? this.distribucion.mapa.y + this.distribucion.mapa.alto / 2
+            )
             .setDepth(10);
 
         aviso.add([

@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { GameObjects, Scene, Time } from 'phaser';
 import { actualizarUsuarioSesion, asignarNombre, obtenerSesion, sugerirNombres } from '../../servicios/ClienteApi';
 import { Boton } from '../ui/Boton';
@@ -20,18 +21,20 @@ export class EscenaNombre extends Scene {
     private consulta = 0;
     private disponible = false;
     private ocupado = false;
+    private nombresSugeridos: string[] = [];
 
     constructor() {
         super('EscenaNombre');
     }
 
     create(): void {
-        const centro = this.scale.width / 2;
+        const centro = ANCHO_INTERFAZ / 2;
 
         this.espera = null;
         this.consulta = 0;
         this.disponible = false;
         this.ocupado = false;
+        this.nombresSugeridos = [];
 
         dibujarPantallaSesion(this, 'ELIGE TU NOMBRE');
         this.add.text(centro, 210, 'Así te verán los demás jugadores', estiloTexto(12, COLOR.GRIS_CLARO)).setOrigin(0.5);
@@ -45,6 +48,8 @@ export class EscenaNombre extends Scene {
 
         this.estado = this.add.text(centro, 340, AYUDA, estiloTexto(11, COLOR.GRIS)).setOrigin(0.5);
         this.sugerencias = this.add.container(0, 0);
+        this.scale.on('resize', this.ajustarSugerencias, this);
+        this.events.once('shutdown', () => this.scale.off('resize', this.ajustarSugerencias, this));
         this.aviso = new Aviso(this, 580);
 
         // Si ya tenía nombre (viene del menú) puede volver sin cambiarlo
@@ -75,6 +80,7 @@ export class EscenaNombre extends Scene {
         this.disponible = false;
         this.botonConfirmar.setHabilitado(false);
         this.sugerencias.removeAll(true);
+        this.nombresSugeridos = [];
         this.aviso.limpiar();
 
         const numero = ++this.consulta;
@@ -124,17 +130,23 @@ export class EscenaNombre extends Scene {
 
     
     private mostrarSugerencias(nombres: string[]): void {
-        const centro = this.scale.width / 2;
+        const centro = ANCHO_INTERFAZ / 2;
+        const anchoDisponible = Math.min(900, this.scale.width - 48);
+        const separacion = anchoDisponible / 3;
+        const anchoBoton = Math.min(280, separacion - 16);
+        const escala = this.scale.displaySize.width / this.scale.width;
+        const saltoFila = Math.max(70, 44 / escala + 16);
         const posiciones = [
-            [centro - 300, 410], [centro, 410], [centro + 300, 410],
-            [centro - 150, 480], [centro + 150, 480],
+            [centro - separacion, 410], [centro, 410], [centro + separacion, 410],
+            [centro - separacion / 2, 410 + saltoFila], [centro + separacion / 2, 410 + saltoFila],
         ];
+        this.nombresSugeridos = nombres.slice(0, posiciones.length);
 
-        nombres.slice(0, posiciones.length).forEach((nombre, i) => {
+        this.nombresSugeridos.forEach((nombre, i) => {
             const [x, y] = posiciones[i];
 
             const boton = new Boton(this, x, y, nombre, {
-                ancho: 280,
+                ancho: anchoBoton,
                 alto: 48,
                 tamanoTexto: 10,
                 color: COLOR.VERDE,
@@ -143,6 +155,11 @@ export class EscenaNombre extends Scene {
 
             this.sugerencias.add(boton);
         });
+    }
+
+    private ajustarSugerencias(): void {
+        this.sugerencias.removeAll(true);
+        this.mostrarSugerencias(this.nombresSugeridos);
     }
 
     private elegirSugerencia(nombre: string): void {

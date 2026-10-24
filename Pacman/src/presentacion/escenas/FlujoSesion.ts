@@ -2,6 +2,7 @@ import { GameObjects, Scene } from 'phaser';
 import { TUsuario } from '../../modelos/usuario.model';
 import { COLOR, css, estiloTexto } from '../ui/Paleta';
 import { dibujarMarco } from '../ui/Panel';
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 
 
 export const ESCENA_PRINCIPAL = 'EscenaMenu';
@@ -12,7 +13,7 @@ export function continuarConSesion(escena: Scene, usuario: TUsuario): void {
 }
 
 export function dibujarPantallaSesion(escena: Scene, subtitulo: string): void {
-    const centro = escena.scale.width / 2;
+    const centro = ANCHO_INTERFAZ / 2;
 
     dibujarMarco(escena);
     escena.add.text(centro, 100, 'PAC-MAN', estiloTexto(48, COLOR.PACMAN)).setOrigin(0.5);
@@ -24,10 +25,13 @@ export class Aviso {
 
     constructor(escena: Scene, y: number) {
         this.texto = escena.add
-            .text(escena.scale.width / 2, y, '', estiloTexto(11, COLOR.GRIS_CLARO))
+            .text(ANCHO_INTERFAZ / 2, y, '', estiloTexto(11, COLOR.GRIS_CLARO))
             .setOrigin(0.5)
-            .setAlign('center')
-            .setWordWrapWidth(760);
+            .setAlign('center');
+        const ajustar = () => this.texto.setWordWrapWidth(Math.min(760, escena.scale.width - 48));
+        ajustar();
+        escena.scale.on('resize', ajustar);
+        escena.events.once('shutdown', () => escena.scale.off('resize', ajustar));
     }
 
     error(texto: string): void {

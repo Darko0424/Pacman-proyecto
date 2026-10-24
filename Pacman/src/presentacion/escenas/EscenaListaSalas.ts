@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ, ALTO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { GameObjects, Scene, Time } from 'phaser';
 import { EstadoSala } from '../../modelos/tiempo-real/enums';
 import { SalaDto } from '../../modelos/tiempo-real/sala.dto';
@@ -54,7 +55,7 @@ export class EscenaListaSalas extends Scene {
     }
 
     create(): void {
-        const { width } = this.scale;
+        const width = ANCHO_INTERFAZ;
 
         // El marco va encima para que los personajes entren y salgan por detrás
         this.dibujarDesfile();
@@ -239,7 +240,7 @@ export class EscenaListaSalas extends Scene {
     }
 
     private crearFila(sala: SalaDto, y: number): GameObjects.Container {
-        const { width } = this.scale;
+        const width = ANCHO_INTERFAZ;
         const x = (width - ANCHO_FILA) / 2;
         const fila = this.add.container(x, y);
         const aspecto = ASPECTO_ESTADO[sala.estado];
@@ -295,7 +296,7 @@ export class EscenaListaSalas extends Scene {
     }
 
     private mostrarVacio(titulo: string, subtitulo = ''): void {
-        const { width } = this.scale;
+        const width = ANCHO_INTERFAZ;
 
         this.filas.removeAll(true);
         this.filas.add([
@@ -311,7 +312,8 @@ export class EscenaListaSalas extends Scene {
 
     // Animacion de los fantasmas huyendo de pacman
     private dibujarDesfile(): void {
-        const { width, height } = this.scale;
+        const width = ANCHO_INTERFAZ;
+        const height = ALTO_INTERFAZ;
         const y = height - 34;
         const grupo = this.add.container(-60, y);
 

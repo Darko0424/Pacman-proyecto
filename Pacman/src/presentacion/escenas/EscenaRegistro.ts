@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { Scene } from 'phaser';
 import { registrar } from '../../servicios/ClienteApi';
 import { Boton } from '../ui/Boton';
@@ -27,14 +28,14 @@ export class EscenaRegistro extends Scene {
     }
 
     create(): void {
-        const centro = this.scale.width / 2;
+        const centro = ANCHO_INTERFAZ / 2;
 
         this.ocupado = false;
 
         dibujarPantallaSesion(this, 'CREAR CUENTA');
         crearPanel(this, centro - 260, 210, 520, 300);
 
-        this.add.text(centro - 220, 235, 'Correo electrónico', estiloTexto(12, COLOR.MURO_CLARO));
+        this.add.text(centro - 220, 235, 'Correo electrónico', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
         this.campoCorreo = crearCampo(this, centro, 280, {
             tipo: 'email',
             ejemplo: 'tucorreo@gmail.com',
@@ -43,7 +44,7 @@ export class EscenaRegistro extends Scene {
             alEnter: () => this.campoContrasena.focus(),
         });
 
-        this.add.text(centro - 220, 330, 'Contraseña', estiloTexto(12, COLOR.MURO_CLARO));
+        this.add.text(centro - 220, 330, 'Contraseña', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
         this.campoContrasena = crearCampo(this, centro, 375, {
             tipo: 'password',
             ejemplo: 'Mínimo 8 caracteres',
@@ -52,7 +53,7 @@ export class EscenaRegistro extends Scene {
             alEnter: () => this.campoConfirmar.focus(),
         });
 
-        this.add.text(centro - 220, 425, 'Repite la contraseña', estiloTexto(12, COLOR.MURO_CLARO));
+        this.add.text(centro - 220, 425, 'Repite la contraseña', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
         this.campoConfirmar = crearCampo(this, centro, 470, {
             tipo: 'password',
             ejemplo: '********',

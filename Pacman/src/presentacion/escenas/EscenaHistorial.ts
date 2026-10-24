@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { GameObjects, Scene } from 'phaser';
 import { HistorialEntrada } from '../../modelos/historial-entrada.model';
 import { HistorialRonda } from '../../modelos/historial-ronda.model';
@@ -56,7 +57,7 @@ export class EscenaHistorial extends Scene {
         this.listadoDisponible = false;
         this.rondasDisponibles = false;
 
-        const centro = this.scale.width / 2;
+        const centro = ANCHO_INTERFAZ / 2;
 
         dibujarMarco(this);
         this.add
@@ -377,7 +378,7 @@ export class EscenaHistorial extends Scene {
         this.filas.add(
             this.add
                 .text(
-                    this.scale.width / 2,
+                    ANCHO_INTERFAZ / 2,
                     444,
                     texto,
                     estiloTexto(13, COLOR.GRIS_CLARO)

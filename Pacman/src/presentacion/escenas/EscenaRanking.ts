@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { GameObjects, Scene } from 'phaser';
 import { RankingEntrada, RolRanking } from '../../modelos/ranking-entrada.model';
 import { RankingTotalEntrada } from '../../modelos/ranking-total-entrada.model';
@@ -50,7 +51,7 @@ export class EscenaRanking extends Scene {
         this.pestana = 'PACMAN';
         this.cargando = false;
 
-        const centro = this.scale.width / 2;
+        const centro = ANCHO_INTERFAZ / 2;
 
         dibujarMarco(this);
         this.add
@@ -253,7 +254,7 @@ export class EscenaRanking extends Scene {
             this.filas.add(
                 this.add
                     .text(
-                        this.scale.width / 2,
+                        ANCHO_INTERFAZ / 2,
                         440,
                         'Aún no hay jugadores en este ranking.',
                         estiloTexto(13, COLOR.GRIS_CLARO)

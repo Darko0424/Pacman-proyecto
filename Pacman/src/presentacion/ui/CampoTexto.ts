@@ -17,7 +17,7 @@ export function crearCampo(escena: Scene, x: number, y: number, opciones: Opcion
     campo.className = `campo-texto ${opciones.clase ?? ''}`.trim();
     campo.autocomplete = opciones.autocompletar ?? 'off';
     campo.spellcheck = false;
-    campo.autocapitalize = 'off'; campo.placeholder = opciones.ejemplo ?? '';
+    campo.autocapitalize = 'off';
 
     if (opciones.largoMaximo) {
         campo.maxLength = opciones.largoMaximo;
@@ -35,12 +35,15 @@ export function crearCampo(escena: Scene, x: number, y: number, opciones: Opcion
     });
 
     if (campo.type !== 'password') {
-        escena.add.dom(x, y, campo);
+        const objeto = escena.add.dom(x, y, campo);
+        const medir = () => objeto.updateSize();
+        escena.scale.on('resize', medir);
+        escena.events.once('shutdown', () => escena.scale.off('resize', medir));
         return campo;
     }
 
     const contenedor = document.createElement('div');
-    contenedor.className = 'campo-contraseña';
+    contenedor.className = 'campo-contrasena';
 
     const ver = document.createElement('button');
     ver.type = 'button';
@@ -58,7 +61,10 @@ export function crearCampo(escena: Scene, x: number, y: number, opciones: Opcion
     });
 
     contenedor.append(campo, ver);
-    escena.add.dom(x, y, contenedor);
+    const objeto = escena.add.dom(x, y, contenedor);
+    const medir = () => objeto.updateSize();
+    escena.scale.on('resize', medir);
+    escena.events.once('shutdown', () => escena.scale.off('resize', medir));
 
     return campo;
 

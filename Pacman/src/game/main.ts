@@ -14,6 +14,7 @@ import { EscenaMenu } from '../presentacion/escenas/EscenaMenu';
 import { EscenaJuego } from '../presentacion/escenas/EscenaJuego';
 import { EscenaRanking } from '../presentacion/escenas/EscenaRanking';
 import { EscenaHistorial } from '../presentacion/escenas/EscenaHistorial';
+import { iniciarPantallaAdaptable } from '../presentacion/ui/PantallaAdaptable';
 
 
 //  Find out more information about the Game Config at:
@@ -35,6 +36,9 @@ const config: Phaser.Types.Core.GameConfig = {
    // Permite poner <input> de HTML encima del juego (pantallas de sesión)
     dom: {
         createContainer: true
+    },
+    callbacks: {
+        postBoot: (juego) => iniciarPantallaAdaptable(juego, juego.config.parent as string),
     },
     scene: [
         EscenaCarga,

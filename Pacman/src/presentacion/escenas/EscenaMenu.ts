@@ -1,3 +1,4 @@
+import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { Scene } from 'phaser';
 import { cerrarSesion, obtenerSesion } from '../../servicios/ClienteApi';
 import { conexionTiempoReal } from '../../servicios/ConexionTiempoReal';
@@ -24,7 +25,7 @@ export class EscenaMenu extends Scene {
             return;
         }
 
-        const centro = this.scale.width / 2;
+        const centro = ANCHO_INTERFAZ / 2;
 
         this.ocupado = false;
 
