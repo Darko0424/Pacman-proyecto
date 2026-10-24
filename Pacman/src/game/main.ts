@@ -14,6 +14,8 @@ import { EscenaMenu } from '../presentacion/escenas/EscenaMenu';
 import { EscenaJuego } from '../presentacion/escenas/EscenaJuego';
 import { EscenaRanking } from '../presentacion/escenas/EscenaRanking';
 import { EscenaHistorial } from '../presentacion/escenas/EscenaHistorial';
+import { borrarSesion } from '../servicios/ClienteApi';
+import { conexionTiempoReal } from '../servicios/ConexionTiempoReal';
 
 
 //  Find out more information about the Game Config at:
@@ -57,7 +59,18 @@ const config: Phaser.Types.Core.GameConfig = {
 
 const StartGame = (parent: string) => {
 
-    return new Game({ ...config, parent });
+    const juego = new Game({ ...config, parent });
+
+    conexionTiempoReal.on('sesionReemplazada', async () => {
+        await conexionTiempoReal.desconectar();
+        borrarSesion();
+
+        juego.scene.getScenes(true).forEach((escena) => escena.scene.stop());
+        juego.scene.start('EscenaLogin', {
+            aviso: 'Iniciaron sesión con tu cuenta en otro dispositivo',
+        });
+    });
+    return juego;
 
 }
 

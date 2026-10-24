@@ -14,4 +14,9 @@ public interface INotificadorJuego
     Task EnviarSalaAConexionAsync(string idConexion, SalaDto sala);
     Task EnviarNivelAConexionAsync(string idConexion, NivelDto nivel);
     Task EnviarEstadoAConexionAsync(string idConexion, EstadoPartidaDto estado);
+
+    //Notifica cuando otra conexion del mismo usuario toma su lugar (se inicio sesión en otro dispositivo)
+    Task NotificarSesionReemplazadaAsync(string idConexion, string codigoSala);
+
+    Task NotificarSesionCerradaAsync(int idUsuario);
 }

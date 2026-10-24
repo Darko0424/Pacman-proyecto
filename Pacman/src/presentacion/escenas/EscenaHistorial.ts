@@ -15,6 +15,8 @@ import { Aviso } from './FlujoSesion';
 
 const PARTIDAS_POR_PAGINA = 3;
 const RONDAS_POR_PAGINA = 5;
+const ANCHO_DISENO = 1024;
+
 
 export class EscenaHistorial extends Scene {
     private partidas: HistorialEntrada[] = [];
@@ -23,6 +25,7 @@ export class EscenaHistorial extends Scene {
     private paginaPartidas = 0;
     private paginaRondas = 0;
     private solicitud = 0;
+    private desplazamiento = 0;
     private cargando = false;
     private listadoDisponible = false;
     private rondasDisponibles = false;
@@ -57,6 +60,7 @@ export class EscenaHistorial extends Scene {
         this.rondasDisponibles = false;
 
         const centro = this.scale.width / 2;
+        this.desplazamiento = (this.scale.width - ANCHO_DISENO) / 2;
 
         dibujarMarco(this);
         this.add
@@ -70,7 +74,7 @@ export class EscenaHistorial extends Scene {
                 estiloTexto(12, COLOR.GRIS_CLARO)
             )
             .setOrigin(0.5);
-        crearPanel(this, 102, 140, 820, 98, COLOR.PACMAN);
+        crearPanel(this, this.posX(102), 140, 820, 98, COLOR.PACMAN);
         this.progreso = this.add.container(0, 0);
         this.avisoProgreso = this.add
             .text(centro, 189, '', estiloTexto(10, COLOR.GRIS_CLARO))
@@ -86,20 +90,20 @@ export class EscenaHistorial extends Scene {
             .text(centro, 654, '', estiloTexto(10, COLOR.GRIS_CLARO))
             .setOrigin(0.5);
 
-        this.volver = new Boton(this, 170, 704, 'VOLVER', {
+        this.volver = new Boton(this, this.posX(170), 704, 'VOLVER', {
             ancho: 200,
             color: COLOR.GRIS_CLARO,
             alPulsar: () => this.regresar(),
         });
-        this.anterior = new Boton(this, 404, 704, 'ANTERIOR', {
+        this.anterior = new Boton(this, this.posX(404), 704, 'ANTERIOR', {
             ancho: 200,
             alPulsar: () => this.cambiarPagina(-1),
         });
-        this.siguiente = new Boton(this, 632, 704, 'SIGUIENTE', {
+        this.siguiente = new Boton(this, this.posX(632), 704, 'SIGUIENTE', {
             ancho: 200,
             alPulsar: () => this.cambiarPagina(1),
         });
-        this.actualizar = new Boton(this, 858, 704, 'ACTUALIZAR', {
+        this.actualizar = new Boton(this, this.posX(858), 704, 'ACTUALIZAR', {
             ancho: 210,
             tamanoTexto: 12,
             alPulsar: () => this.actualizarDatos(),
@@ -201,7 +205,7 @@ export class EscenaHistorial extends Scene {
         ];
 
         valores.forEach((dato, indice) => {
-            const x = 204 + indice * 205;
+            const x = this.posX(204 + indice * 205);
 
             this.progreso.add([
                 this.add
@@ -279,27 +283,27 @@ export class EscenaHistorial extends Scene {
         const color = partida.estado === 'ABANDONADA' ? COLOR.ROSA : COLOR.VERDE;
 
         this.filas.add([
-            crearPanel(this, 102, y, 820, 94),
+            crearPanel(this, this.posX(102), y, 820, 94),
             this.add.text(
-                120,
+                this.posX(120),
                 y + 15,
                 `SALA ${partida.codigoSala}  |  ${estado}`,
                 estiloTexto(11, color)
             ),
             this.add.text(
-                120,
+                this.posX(120),
                 y + 38,
                 `${modo}  ·  ${partida.dificultad}  ·  ${this.fecha(partida.fechaInicio)}`,
                 estiloTexto(9, COLOR.GRIS_CLARO)
             ),
             this.add.text(
-                120,
+                this.posX(120),
                 y + 59,
                 `${partida.puntuacion.toLocaleString('es-CR')} PTS  ·  NIVEL ${partida.nivelAlcanzado}  ·  ${partida.nivelesGanados}/${partida.nivelesJugados} GANADOS`,
                 estiloTexto(10, COLOR.BLANCO)
             ),
             this.add.text(
-                120,
+                this.posX(120),
                 y + 78,
                 partida.abandono
                     ? 'Abandonaste esta partida'
@@ -311,7 +315,7 @@ export class EscenaHistorial extends Scene {
                         : COLOR.GRIS_CLARO
                 )
             ),
-            new Boton(this, 816, y + 48, 'VER NIVELES', {
+            new Boton(this, this.posX(816), y + 48, 'VER NIVELES', {
                 ancho: 176,
                 alto: 48,
                 tamanoTexto: 11,
@@ -345,27 +349,27 @@ export class EscenaHistorial extends Scene {
             : ronda.nivel;
 
         this.filas.add([
-            crearPanel(this, 102, y, 820, 57),
+            crearPanel(this, this.posX(102), y, 820, 57),
             this.add.text(
-                118,
+                this.posX(118),
                 y + 9,
                 `N${ronda.numeroNivel} ${nombreNivel}`,
                 estiloTexto(10, COLOR.CELESTE)
             ),
-            this.add.text(440, y + 9, rol, estiloTexto(10, COLOR.PACMAN)),
+            this.add.text(this.posX(440), y + 9, rol, estiloTexto(10, COLOR.PACMAN)),
             this.add
                 .text(
-                    636,
+                    this.posX(636),
                     y + 9,
                     `${ronda.puntuacion.toLocaleString('es-CR')} PTS`,
                     estiloTexto(10, COLOR.BLANCO)
                 )
                 .setOrigin(0.5, 0),
             this.add
-                .text(904, y + 9, resultado, estiloTexto(10, color))
+                .text(this.posX(904), y + 9, resultado, estiloTexto(10, color))
                 .setOrigin(1, 0),
             this.add.text(
-                118,
+                this.posX(118),
                 y + 34,
                 `${ronda.personaje}  ·  ${capturas}  ·  ${ronda.objetosUsados} objetos`,
                 estiloTexto(9, COLOR.GRIS_CLARO)
@@ -454,4 +458,10 @@ export class EscenaHistorial extends Scene {
                 minute: '2-digit',
             });
     }
+
+    private posX(x: number): number {{
+        return x + this.desplazamiento;
+
+    }}
+
 }

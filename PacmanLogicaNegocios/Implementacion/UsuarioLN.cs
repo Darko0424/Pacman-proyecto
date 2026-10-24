@@ -41,15 +41,18 @@ namespace PacmanLogicaNegocios.Implementacion
         private static readonly string[] SufijosNombre = { "xd", "_gg", "_pro", "_cr", "_yt" };
 
         private readonly IServicioCorreo _servicioCorreo;
+        private readonly INotificadorJuego _notificador;
 
         public UsuarioLN(
            IUnidadTrabajoEF unidadTrabajo,
            ILogger<UsuarioLN> logger,
            IMapper mapper,
-           IServicioCorreo servicioCorreo)
+           IServicioCorreo servicioCorreo,
+           INotificadorJuego notificador)
            : base(unidadTrabajo, mapper, logger)
         {
             _servicioCorreo = servicioCorreo;
+            _notificador = notificador;
         }
 
         // ---------- Registro y verificación ----------
@@ -700,6 +703,33 @@ namespace PacmanLogicaNegocios.Implementacion
         private async Task<Respuesta<clsSesionIniciada>> CrearSesionAsync(Usuario usuario)
         {
             var resultado = new Respuesta<clsSesionIniciada>();
+
+            var anteriores =
+                await _unidadDeTrabajo.TSesionMovil.BuscarAsync(
+                    x => x.IdUsuario == usuario.IdUsuario);
+
+            if (anteriores.Success && anteriores.Data != null)
+            {
+                var cerradas = anteriores.Data.ToList();
+
+                foreach (var anterior in cerradas)
+                {
+                    await _unidadDeTrabajo.TSesionMovil.EliminarAsync(anterior);
+                }
+
+                if (cerradas.Count > 0)
+                {
+                    try
+                    {
+                        await _notificador.NotificarSesionCerradaAsync(usuario.IdUsuario);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "No se pudo avisar el cierre de sesión al usuario {IdUsuario}", usuario.IdUsuario);
+                    }
+                }
+            }
 
             var token = Convert.ToHexString(
                 RandomNumberGenerator.GetBytes(TamanoToken));
