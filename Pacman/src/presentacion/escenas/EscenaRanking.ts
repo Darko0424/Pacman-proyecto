@@ -17,9 +17,12 @@ type PestanaRanking = RolRanking | 'TOTAL';
 type EntradaRanking = RankingEntrada | RankingTotalEntrada;
 
 const FILAS_POR_PAGINA = 5;
+const ANCHO_DISENO = 1024;
+
 
 export class EscenaRanking extends Scene {
     private pestana: PestanaRanking = 'PACMAN';
+    private desplazamiento = 0;
     private entradas: EntradaRanking[] = [];
     private pagina = 0;
     private solicitud = 0;
@@ -51,6 +54,7 @@ export class EscenaRanking extends Scene {
         this.cargando = false;
 
         const centro = this.scale.width / 2;
+        this.desplazamiento = (this.scale.width - ANCHO_DISENO) / 2;
 
         dibujarMarco(this);
         this.add
@@ -96,20 +100,20 @@ export class EscenaRanking extends Scene {
             ),
         }));
 
-        crearPanel(this, 102, 208, 820, 76, COLOR.PACMAN);
+        crearPanel(this, this.posX(102), 208, 820, 76, COLOR.PACMAN);
         this.posicion = this.add
             .text(centro, 246, '', estiloTexto(11, COLOR.PACMAN))
             .setOrigin(0.5)
             .setAlign('center')
             .setWordWrapWidth(770);
 
-        this.add.text(126, 310, 'POS.', estiloTexto(10, COLOR.GRIS_CLARO));
-        this.add.text(218, 310, 'JUGADOR', estiloTexto(10, COLOR.GRIS_CLARO));
+        this.add.text(this.posX(126), 310, 'PTS.', estiloTexto(10, COLOR.GRIS_CLARO));
+        this.add.text(this.posX(218), 310, 'JUGADOR', estiloTexto(10, COLOR.GRIS_CLARO));
         this.encabezadoPuntos = this.add
-            .text(700, 310, '', estiloTexto(10, COLOR.GRIS_CLARO))
+            .text(this.posX(700), 310, '', estiloTexto(10, COLOR.GRIS_CLARO))
             .setOrigin(1, 0);
         this.encabezadoCantidad = this.add
-            .text(896, 310, '', estiloTexto(10, COLOR.GRIS_CLARO))
+            .text(this.posX(896), 310, '', estiloTexto(10, COLOR.GRIS_CLARO))
             .setOrigin(1, 0);
         this.filas = this.add.container(0, 0);
         this.indicadorPagina = this.add
@@ -117,20 +121,20 @@ export class EscenaRanking extends Scene {
             .setOrigin(0.5);
         this.aviso = new Aviso(this, 580);
 
-        new Boton(this, 170, 680, 'VOLVER', {
+        new Boton(this, this.posX(170), 680, 'VOLVER', {
             ancho: 200,
             color: COLOR.GRIS_CLARO,
             alPulsar: () => this.scene.start('EscenaMenu'),
         });
-        this.anterior = new Boton(this, 404, 680, 'ANTERIOR', {
+        this.anterior = new Boton(this, this.posX(404), 680, 'ANTERIOR', {
             ancho: 200,
             alPulsar: () => this.cambiarPagina(-1),
         });
-        this.siguiente = new Boton(this, 632, 680, 'SIGUIENTE', {
+        this.siguiente = new Boton(this, this.posX(632), 680, 'SIGUIENTE', {
             ancho: 200,
             alPulsar: () => this.cambiarPagina(1),
         });
-        this.actualizar = new Boton(this, 858, 680, 'ACTUALIZAR', {
+        this.actualizar = new Boton(this, this.posX(858), 680, 'ACTUALIZAR', {
             ancho: 210,
             tamanoTexto: 12,
             alPulsar: () => this.cargar(this.pestana),
@@ -223,16 +227,16 @@ export class EscenaRanking extends Scene {
                     : entrada.nombreUsuario;
 
                 this.filas.add([
-                    crearPanel(this, 102, y, 820, 38, propia ? COLOR.PACMAN : COLOR.MURO),
+                    crearPanel(this, this.posX(102), y, this.posX(820), 38, propia ? COLOR.PACMAN : COLOR.MURO),
                     this.add
-                        .text(126, y + 19, puesto, estiloTexto(11, color))
+                        .text(this.posX(126), y + 19, puesto, estiloTexto(11, color))
                         .setOrigin(0, 0.5),
                     this.add
-                        .text(218, y + 19, nombre, estiloTexto(11, color))
+                        .text(this.posX(218), y + 19, nombre, estiloTexto(11, color))
                         .setOrigin(0, 0.5),
                     this.add
                         .text(
-                            700,
+                            this.posX(700),
                             y + 19,
                             this.puntos(entrada).toLocaleString('es-CR'),
                             estiloTexto(11, color)
@@ -240,7 +244,7 @@ export class EscenaRanking extends Scene {
                         .setOrigin(1, 0.5),
                     this.add
                         .text(
-                            896,
+                            this.posX(896),
                             y + 19,
                             cantidad.toLocaleString('es-CR'),
                             estiloTexto(11, color)
@@ -291,4 +295,11 @@ export class EscenaRanking extends Scene {
             ? entrada.puntosTotales
             : entrada.mejorPuntuacion ?? 0;
     }
+
+    private posX(x: number): number {
+        return x + this.desplazamiento;
+
+    }
+
+
 }

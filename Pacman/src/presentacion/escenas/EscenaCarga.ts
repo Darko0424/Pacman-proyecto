@@ -8,6 +8,8 @@ import {
     TAMANO_ITEM,
     TEXTURA,
 } from '../sprites/CatalogoSprites';
+import { aplicarVolumenGuardado } from '../sonidos/Volumen';
+
 
 // Carga todos los sprites, registra las animaciones y pasa al menú
 export class EscenaCarga extends Scene {
@@ -50,6 +52,7 @@ export class EscenaCarga extends Scene {
 
     create(): void {
         registrarAnimaciones(this);
+        aplicarVolumenGuardado(this);;
 
         // Accesos directos de desarrollo:
         //   http://localhost:8080/?sprites  galería para revisar los sprites

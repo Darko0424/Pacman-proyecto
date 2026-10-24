@@ -282,6 +282,8 @@ export class EscenaJuego extends Scene {
                 this.enviarDireccion(direccion);
             } else if (evento.code === 'Space') {
                 this.usarObjeto();
+            }   else if (evento.code === 'M') {
+                this.hud.alternarSilencio();
             }
         });
     }

@@ -262,6 +262,8 @@ public sealed class GestorSalas : IGestorSalas, IAsyncDisposable, IDisposable
                 return Respuesta<SalaDto>.Fail("El usuario no tiene una plaza reservada en esta sala.");
             }
 
+            string anterior;
+
             lock (_indices)
             {
                 VerificarDisponible();
@@ -271,7 +273,7 @@ public sealed class GestorSalas : IGestorSalas, IAsyncDisposable, IDisposable
                     return Respuesta<SalaDto>.Fail("La conexión ya pertenece a otro jugador.");
                 }
 
-                string anterior = jugador.IdConexion;
+                 anterior = jugador.IdConexion;
 
                 if (!contexto.Sala.Reconectar(idUsuario, idConexion))
                 {
@@ -281,6 +283,11 @@ public sealed class GestorSalas : IGestorSalas, IAsyncDisposable, IDisposable
                 contexto.InicioPendiente?.SalaPreparada.Reconectar(idUsuario, idConexion);
                 _conexiones.Remove(anterior);
                 _conexiones[idConexion] = contexto;
+            }
+
+            if (anterior != idConexion)
+            {
+                await _notificador.NotificarSesionReemplazadaAsync(anterior, contexto.Sala.Codigo);
             }
 
             MarcarCambioDeSala(contexto);
