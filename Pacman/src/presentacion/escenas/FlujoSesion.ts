@@ -3,12 +3,15 @@ import { TUsuario } from '../../modelos/usuario.model';
 import { COLOR, css, estiloTexto } from '../ui/Paleta';
 import { dibujarMarco } from '../ui/Panel';
 import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
+import { conexionTiempoReal } from '../../servicios/ConexionTiempoReal';
 
 
 export const ESCENA_PRINCIPAL = 'EscenaMenu';
 
 
 export function continuarConSesion(escena: Scene, usuario: TUsuario): void {
+    void conexionTiempoReal.conectar();
+
     escena.scene.start(usuario.nombreDefinido ? ESCENA_PRINCIPAL : 'EscenaNombre');
 }
 

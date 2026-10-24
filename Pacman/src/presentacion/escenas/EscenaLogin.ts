@@ -23,9 +23,14 @@ export class EscenaLogin extends Scene {
     private botonEntrar: Boton;
     private botonCrear: Boton;
     private ocupado = false;
+    private avisoInicial = '';
 
     constructor() {
         super('EscenaLogin');
+    }
+
+    init(datos?: { aviso?: string }): void {
+        this.avisoInicial = datos?.aviso ?? '';
     }
 
     create(): void {
@@ -54,6 +59,10 @@ export class EscenaLogin extends Scene {
         });
 
         this.aviso = new Aviso(this, 510);
+
+        if (this.avisoInicial) {
+            this.aviso.error(this.avisoInicial);
+        }
 
         this.botonEntrar = new Boton(this, centro, 580, 'ENTRAR', {
             ancho: 300,

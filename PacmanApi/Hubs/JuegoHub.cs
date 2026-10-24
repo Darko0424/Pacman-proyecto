@@ -21,6 +21,7 @@ public sealed class JuegoHub : Hub
     public const string SalaActualizada = "SalaActualizada";
     public const string NivelIniciado = "NivelIniciado";
     public const string EstadoActualizado = "EstadoActualizado";
+    public const string SesionReemplazada = "SesionReemplazada";
 
     private readonly IGestorSalas _gestor;
 

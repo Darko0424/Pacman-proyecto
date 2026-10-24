@@ -47,4 +47,15 @@ public sealed class NotificadorJuego : INotificadorJuego
     {
         return _hub.Clients.Client(idConexion).SendAsync(JuegoHub.EstadoActualizado, estado);
     }
+    public async Task NotificarSesionReemplazadaAsync(string idConexion, string codigoSala)
+    {
+        await _hub.Groups.RemoveFromGroupAsync(idConexion, JuegoHub.Grupo(codigoSala));
+        await _hub.Clients.Client(idConexion).SendAsync(JuegoHub.SesionReemplazada);
+    }
+
+    public Task NotificarSesionCerradaAsync(int idUsuario)
+    {
+        return _hub.Clients.User(idUsuario.ToString()).SendAsync(JuegoHub.SesionReemplazada);
+    }
+
 }

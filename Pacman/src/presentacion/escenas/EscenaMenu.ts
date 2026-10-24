@@ -5,6 +5,8 @@ import { conexionTiempoReal } from '../../servicios/ConexionTiempoReal';
 import { Boton } from '../ui/Boton';
 import { COLOR, estiloTexto } from '../ui/Paleta';
 import { Aviso, dibujarPantallaSesion } from './FlujoSesion';
+import { OPCIONES_VOLUMEN, cambiarVolumen, obtenerVolumen } from '../sonidos/Volumen';
+import { Selector } from '../ui/Selector';
 
 // Menú principal después de iniciar sesión y al volver de las consultas o salas.
 export class EscenaMenu extends Scene {
@@ -57,7 +59,11 @@ export class EscenaMenu extends Scene {
             }),
         ];
 
-        this.aviso = new Aviso(this, 692);
+        new Selector(this, centro - 210, 690, 420, 'VOLUMEN', OPCIONES_VOLUMEN,
+        (volumen) => cambiarVolumen(this, volumen))
+        .setValor(obtenerVolumen());
+
+        this.aviso = new Aviso(this, 740);
     }
 
     private async salir(): Promise<void> {

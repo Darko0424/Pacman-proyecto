@@ -17,13 +17,14 @@ interface AvisosServidor {
     SalaActualizada: SalaDto;
     NivelIniciado: NivelDto;
     EstadoActualizado: EstadoPartidaDto;
+    SesionReemplazada: undefined;
 }
 
 type NombreAviso = keyof AvisosServidor;
 
 export type EstadoConexion = 'DESCONECTADO' | 'CONECTANDO' | 'CONECTADO' | 'RECONECTANDO';
 
-const AVISOS: NombreAviso[] = ['SalaActualizada', 'NivelIniciado', 'EstadoActualizado'];
+const AVISOS: NombreAviso[] = ['SalaActualizada', 'NivelIniciado', 'EstadoActualizado', 'SesionReemplazada'];
 
 // Única conexión con PacmanApi/Hubs/JuegoHub. Las escenas se suscriben a los
 // avisos con on() y deben cancelar la suscripción al cerrarse (shutdown).
@@ -215,6 +216,7 @@ class ConexionTiempoReal {
         const estado = this.estado;
         this.oyentesEstado.forEach((oyente) => oyente(estado));
     }
+
 }
 
 export const conexionTiempoReal = new ConexionTiempoReal();

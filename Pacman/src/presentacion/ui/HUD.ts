@@ -8,6 +8,8 @@ import { Boton } from './Boton';
 import { IndicadorEfectos } from './IndicadorEfectos';
 import { COLOR, css, estiloTexto } from './Paleta';
 import { Recuadro, crearPanel } from './Panel';
+import { cambiarSilencio } from '../sonidos/Volumen';
+
 
 // Color de cada personaje (personajes.id_personaje), igual que su sprite
 const COLOR_PERSONAJE: Record<number, number> = {
@@ -59,9 +61,13 @@ export class HUD {
     private readonly botonObjeto: Boton;
     private readonly descripcionObjeto: GameObjects.Text;
     private objetoMostrado: number | null | undefined = undefined;
+    private readonly escena: Scene;
+    private readonly botonSilencio: Boton;
+
 
     constructor(escena: Scene, opciones: OpcionesHUD) {
         const anteriores = new Set(escena.children.list);
+        this.escena = escena;
         const izq = opciones.izquierda;
         const der = opciones.derecha;
         const margen = izq.x + 20;
@@ -94,6 +100,15 @@ export class HUD {
         const centroDer = der.x + der.ancho / 2;
 
         crearPanel(escena, der.x, der.y, der.ancho, der.alto);
+
+        this.botonSilencio = new Boton(escena, der.x + der.ancho - 47, der.y + 30, '', {
+            ancho: 70,
+            alto: 32,
+            tamanoTexto: 8,
+            color: COLOR.GRIS_CLARO,
+            alPulsar: () => this.alternarSilencio(),
+        });
+        this.mostrarSilencio();
 
         escena.add.text(centroDer, der.y + 30, 'TU PUNTAJE', estiloTexto(Math.max(10, 10 / escala), COLOR.GRIS)).setOrigin(0.5);
         this.puntaje = escena.add.text(centroDer, der.y + 66, '0', estiloTexto(Math.max(26, 20 / escala), COLOR.PACMAN)).setOrigin(0.5);
@@ -196,4 +211,16 @@ export class HUD {
     actualizarEfectos(estado: EstadoPartidaDto, tiempo: number, objetos: Map<number, TObjeto>): void {
         this.efectos.actualizar(estado.efectos, tiempo, objetos);
     }
+
+    alternarSilencio(): void {
+        cambiarSilencio(this.escena);
+        this.mostrarSilencio();
+    }
+
+    private mostrarSilencio(): void {
+        this.botonSilencio.setTexto(this.escena.sound.mute ? 'MUDO' : 'SONIDO');
+
+    }
+
+
 }
