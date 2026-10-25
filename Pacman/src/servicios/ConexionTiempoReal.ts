@@ -10,7 +10,7 @@ import { EstadoPartidaDto } from '../modelos/tiempo-real/estado-partida.dto';
 import { NivelDto } from '../modelos/tiempo-real/nivel.dto';
 import { ConfiguracionSalaDto, SalaDto } from '../modelos/tiempo-real/sala.dto';
 import { obtenerToken } from './ClienteApi';
-import { RUTA_HUB_JUEGO, URL_API } from './Configuracion';
+import { RUTA_HUB_JUEGO, obtenerUrlApi } from './Configuracion';
 
 // Avisos que el servidor envia a los de una sala (constantes de JuegoHub)
 interface AvisosServidor {
@@ -158,7 +158,7 @@ class ConexionTiempoReal {
         }
 
         const conexion = new HubConnectionBuilder()
-            .withUrl(`${URL_API}${RUTA_HUB_JUEGO}`, {
+            .withUrl(`${obtenerUrlApi()}${RUTA_HUB_JUEGO}`, {
                 // Se lee en cada intento por si la sesión cambió
                 accessTokenFactory: () => obtenerToken() ?? '',
             })

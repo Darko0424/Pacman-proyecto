@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo en la compilación de depuración (el APK de prueba): Android 9+ bloquea
+     HTTP sin cifrar y PacmanApi se usa por http://IP-DE-LA-PC:5253 en la red local.
+     La compilación de publicación sigue exigiendo HTTPS. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:usesCleartextTraffic="true" />
+</manifest>

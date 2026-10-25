@@ -40,6 +40,18 @@ export function css(color: number): string {
 // No trae mayúsculas con tilde: los textos en mayúsculas van sin tilde.
 export const FUENTE = '"Press Start 2P", monospace';
 
+// Text.setColor de Phaser vuelve a dibujar el texto y a subirlo a la GPU aunque
+// el color no cambie; en el HUD, que se actualiza en cada cuadro, eso daba tirones
+export function ponerColor(texto: Phaser.GameObjects.Text, color: number): Phaser.GameObjects.Text {
+    const valor = css(color);
+
+    if (texto.style.color !== valor) {
+        texto.setColor(valor);
+    }
+
+    return texto;
+}
+
 export function estiloTexto(
     tamano: number,
     color: number = COLOR.BLANCO,

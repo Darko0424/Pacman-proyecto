@@ -481,8 +481,7 @@ export class EscenaJuego extends Scene {
         const ganador = estado.bandoGanador === Bando.PacMan ? 'GANAN LOS PAC-MAN'
             : estado.bandoGanador === Bando.Fantasma ? 'GANAN LOS FANTASMAS' : 'NIVEL TERMINADO';
 
-        // Tabla de texto con columnas fijas (la fuente es monoespaciada).
-        // Más adelante EscenaResultados puede mostrar el detalle completo.
+        // Tabla de texto con columnas fijas (la fuente es monoespaciada)
         const puntajes = this.estado.actores(estado)
             .map(({ actor }) => actor)
             .sort((a, b) => b.puntuacion - a.puntuacion)

@@ -24,7 +24,7 @@ Pacman/descargas/PacmanMultijugador-debug.apk
 
 La carpeta `descargas` también contiene `prueba-android.json` con la dirección incluida, la fecha y la huella SHA-256. No se incluyen contraseñas de SQL ni del correo en el APK.
 
-Si cambia la IP de la PC, genera de nuevo el APK con la nueva dirección. La compilación del navegador conserva su configuración habitual.
+La dirección que se indica al compilar es solo la predeterminada. Si cambian de red o de PC no hace falta otro APK: en la pantalla de inicio de sesión toca **SERVIDOR**, escribe la IP de la PC (por ejemplo `192.168.1.100`; el puerto 5253 se agrega solo) y pulsa **PROBAR Y GUARDAR**. La app comprueba que PacmanApi responda antes de guardarla, y la recuerda en el teléfono. **PREDETERMINADA** vuelve a la del APK. La compilación del navegador conserva su configuración habitual.
 
 ## Iniciar el servidor y probar
 
@@ -36,7 +36,7 @@ Si cambia la IP de la PC, genera de nuevo el APK con la nueva dirección. La com
 
 Si el celular no puede abrir Swagger, comprueba la dirección, el perfil **red-local** y el permiso de entrada del puerto TCP 5253 en el firewall para esa red local. Instalar el APK no inicia el servidor de C#.
 
-El permiso HTTP y el contenido mixto están habilitados solamente en la compilación Android de depuración para esta prueba local. Para distribuir una versión final, configura una API HTTPS accesible y una firma de publicación propia.
+El permiso HTTP (`android/app/src/debug/AndroidManifest.xml`) y el contenido mixto (`MainActivity`) están habilitados solamente en la compilación Android de depuración para esta prueba local: sin ellos Android 9+ bloquea la conexión con la API aunque Swagger abra en el navegador del celular. Desde Android Studio usa la variante **debug**. Para distribuir una versión final, configura una API HTTPS accesible y una firma de publicación propia.
 
 ## Android Studio
 

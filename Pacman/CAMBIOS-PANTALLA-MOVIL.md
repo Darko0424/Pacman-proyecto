@@ -10,8 +10,9 @@ El campo de contraseña también usaba una clase con ñ que no coincidía con su
 - El lienzo ahora ajusta su proporción al ancho útil, conservando escala uniforme.
   La interfaz mantiene una referencia de 1024 × 768 y la partida distribuye sus
   paneles según el espacio disponible. Las cámaras se recentran sin reiniciar escenas.
-- En formularios y menús pequeños se permite desplazamiento vertical en vez de
-  reducir todo hasta hacerlo ilegible. Los campos tienen al menos 16 px CSS de texto
+- Formularios y menús caben siempre enteros en la pantalla, sin barra de
+  desplazamiento (antes la escala no bajaba de 0.75 y en teléfonos bajos aparecía
+  el scroll). En pantallas muy bajas la interfaz se ve más pequeña. Los campos tienen al menos 16 px CSS de texto
   y 44 px CSS de alto. Al abrir el teclado se conserva la escala y se desplaza el
   campo activo al área visible. Los mismos nodos HTML conservan su valor y foco.
 - El estado de sesión, las peticiones pendientes y la interpolación de la partida
@@ -53,8 +54,8 @@ pruebas de componentes; no sustituyen la comprobación del WebView y Gboard real
 
 El diseño de la partida y la orientación Android siguen siendo horizontales. La
 comprobación vertical solo verifica contención: no garantiza el tamaño táctil de
-la cruceta en vertical. En teléfonos bajos, formularios y menús requieren desplazar
-el contenido. El sistema puede mostrar temporalmente sus barras o una pantalla
+la cruceta en vertical. En teléfonos bajos, formularios y menús se reducen para
+caber; solo con el teclado abierto se desplaza el contenido hasta el campo activo. El sistema puede mostrar temporalmente sus barras o una pantalla
 especial de edición de su teclado. La validación del APK final, dispositivos con
 recortes físicos y otras versiones de Android/WebView corresponde a la prueba nativa;
 no se promete compatibilidad universal a partir de esta matriz.
@@ -91,5 +92,5 @@ mantener PacmanApi iniciado con red-local y el celular en la misma Wi-Fi.
 La direccion incluida es http://10.75.181.202:5253.
 El ZIP anterior no se actualizo: si se comparte un ZIP, debe contener este APK nuevo.
 
-Estas pruebas no sustituyen una partida entre cuatro celulares fisicos. En pantallas
-bajas los formularios usan desplazamiento vertical y la partida esta disenada en horizontal.
+Estas pruebas no sustituyen una partida entre cuatro celulares fisicos. La partida
+esta disenada en horizontal.

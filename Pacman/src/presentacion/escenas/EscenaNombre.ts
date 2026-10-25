@@ -1,4 +1,4 @@
-import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
+import { ANCHO_INTERFAZ, altoTactil } from '../ui/PantallaAdaptable';
 import { GameObjects, Scene, Time } from 'phaser';
 import { actualizarUsuarioSesion, asignarNombre, obtenerSesion, sugerirNombres } from '../../servicios/ClienteApi';
 import { Boton } from '../ui/Boton';
@@ -134,8 +134,7 @@ export class EscenaNombre extends Scene {
         const anchoDisponible = Math.min(900, this.scale.width - 48);
         const separacion = anchoDisponible / 3;
         const anchoBoton = Math.min(280, separacion - 16);
-        const escala = this.scale.displaySize.width / this.scale.width;
-        const saltoFila = Math.max(70, 44 / escala + 16);
+        const saltoFila = Math.max(70, altoTactil(this) + 16);
         const posiciones = [
             [centro - separacion, 410], [centro, 410], [centro + separacion, 410],
             [centro - separacion / 2, 410 + saltoFila], [centro + separacion / 2, 410 + saltoFila],

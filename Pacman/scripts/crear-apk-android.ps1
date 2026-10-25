@@ -130,7 +130,7 @@ try
         throw 'No se pudo verificar TypeScript. No se generó un APK nuevo.'
     }
 
-    & npm.cmd run build-nolog -- --mode android
+    & npm.cmd run build -- --mode android
 
     if ($LASTEXITCODE -ne 0)
     {

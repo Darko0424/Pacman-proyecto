@@ -12,19 +12,39 @@ interface InsetsNativos {
 
 let pantalla: PantallaAdaptable | null = null;
 
+interface Lienzo {
+    // Tamaño del juego en unidades de Phaser
+    ancho: number;
+    alto: number;
+    // Alto en píxeles CSS del contenedor
+    altoCss: number;
+    escala: number;
+}
+
+// La interfaz de referencia (ANCHO_INTERFAZ x ALTO_INTERFAZ) siempre cabe entera en la
+// pantalla, así nunca aparece una barra de desplazamiento; lo que sobra a los
+// lados o arriba y abajo agranda el lienzo en vez de dejar franjas. Las escenas
+// centran la cámara en la interfaz de referencia.
 // El tamaño del contenido y el área visible son independientes cuando aparece el teclado.
-export function calcularLienzo(ancho: number, alto: number, modo: ModoPantalla) {
+export function calcularLienzo(ancho: number, alto: number, modo: ModoPantalla): Lienzo {
     const anchoMinimo = modo === 'formulario' ? 700 : ANCHO_INTERFAZ;
-    const escala = modo === 'juego'
-        ? Math.min(alto / ALTO_INTERFAZ, ancho / ANCHO_INTERFAZ)
-        : Math.min(ancho / anchoMinimo, Math.max(0.75, alto / ALTO_INTERFAZ));
+    const escala = Math.min(alto / ALTO_INTERFAZ, ancho / anchoMinimo);
 
     return {
         ancho: ancho / escala,
-        alto: modo === 'juego' ? alto / escala : ALTO_INTERFAZ,
-        altoCss: modo === 'juego' ? alto : ALTO_INTERFAZ * escala,
+        alto: alto / escala,
+        altoCss: alto,
         escala,
     };
+}
+
+// Alto mínimo para tocar cómodo (44 px reales) en unidades del juego. Tiene
+// tope: en celulares bajos (escala ~0.5) la interfaz de 1024 x 768 no deja
+// espacio para más y los botones se encimarían
+export function altoTactil(escena: Scene): number {
+    const escala = escena.scale.displaySize.width / escena.scale.width;
+
+    return Math.min(44 / escala, 72);
 }
 
 export function iniciarPantallaAdaptable(juego: Game, padre: string): void {
@@ -55,7 +75,7 @@ class PantallaAdaptable {
     private insets: InsetsNativos = { keyboardVisible: false, keyboardHeight: 0 };
     private altoSinTeclado = window.innerHeight;
     private anchoAnterior = 0;
-    private escalaAnterior = 0;
+    private lienzoAnterior: Lienzo | null = null;
     private cuadro = 0;
     private cuadroCampo = 0;
     private campoVisible: HTMLInputElement | null = null;
@@ -82,6 +102,7 @@ class PantallaAdaptable {
     cambiarModo(modo: ModoPantalla): void {
         if (modo !== this.modo) {
             this.modo = modo;
+            this.lienzoAnterior = null;
             this.aplicacion.scrollTop = 0;
         }
 
@@ -135,16 +156,14 @@ class PantallaAdaptable {
         const horizontal = parseFloat(estilo.paddingLeft) + parseFloat(estilo.paddingRight);
         const ancho = Math.max(1, this.aplicacion.clientWidth - horizontal);
         const altoBase = Math.max(1, this.altoSinTeclado - vertical);
-        const lienzo = calcularLienzo(ancho, altoBase, this.modo);
-
-        if (teclado && ancho === this.anchoAnterior && this.escalaAnterior > 0) {
-            lienzo.escala = this.escalaAnterior;
-            lienzo.ancho = ancho / lienzo.escala;
-            lienzo.altoCss = ALTO_INTERFAZ * lienzo.escala;
-        }
+        // Con el teclado abierto se conserva el lienzo (si se achicara, Phaser
+        // alejaría toda la pantalla); solo se desplaza #app hasta el campo activo
+        const lienzo = teclado && ancho === this.anchoAnterior && this.lienzoAnterior
+            ? this.lienzoAnterior
+            : calcularLienzo(ancho, altoBase, this.modo);
 
         this.anchoAnterior = ancho;
-        this.escalaAnterior = lienzo.escala;
+        this.lienzoAnterior = lienzo;
         document.documentElement.style.setProperty('--escala-juego', String(lienzo.escala));
         this.contenedor.style.height = `${lienzo.altoCss}px`;
         this.juego.scale.setParentSize(ancho, lienzo.altoCss);

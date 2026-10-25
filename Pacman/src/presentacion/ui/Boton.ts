@@ -2,6 +2,7 @@ import { GameObjects, Input, Scene } from 'phaser';
 import { SONIDO } from '../sonidos/CatalogoSonidos';
 import { COLOR, css, estiloTexto } from './Paleta';
 import { Recuadro } from './Panel';
+import { altoTactil } from './PantallaAdaptable';
 
 export interface OpcionesBoton {
     ancho?: number;
@@ -24,11 +25,10 @@ export class Boton extends GameObjects.Container {
         super(escena, x, y);
 
         const ancho = opciones.ancho ?? 240;
-        const escala = escena.scale.displaySize.width / escena.scale.width;
         const esJuego = escena.sys.settings.key === 'EscenaJuego';
         const alto = esJuego
             ? opciones.alto ?? 56
-            : Math.max(opciones.alto ?? 56, 44 / escala);
+            : Math.max(opciones.alto ?? 56, altoTactil(escena));
         this.color = opciones.color ?? COLOR.MURO_CLARO;
 
         this.fondo = new Recuadro(escena, 0, 0, ancho, alto, 10, true).dibujar(COLOR.PANEL, this.color);

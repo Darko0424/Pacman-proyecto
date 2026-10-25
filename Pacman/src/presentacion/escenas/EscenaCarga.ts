@@ -29,10 +29,6 @@ export class EscenaCarga extends Scene {
 
         this.load.setPath('assets');
 
-        // Todavía las usan las escenas de la plantilla (MainMenu, Game, GameOver)
-        this.load.image('background', 'bg.png');
-        this.load.image('logo', 'logo.png');
-
         const actor = { frameWidth: TAMANO_ACTOR, frameHeight: TAMANO_ACTOR };
         const item = { frameWidth: TAMANO_ITEM, frameHeight: TAMANO_ITEM };
         const casilla = { frameWidth: TAMANO_CASILLA, frameHeight: TAMANO_CASILLA };
@@ -54,10 +50,10 @@ export class EscenaCarga extends Scene {
         registrarAnimaciones(this);
         aplicarVolumenGuardado(this);
 
-        // Accesos directos de desarrollo:
+        // Accesos directos de desarrollo (solo con npm run dev):
         //   http://localhost:8080/?sprites  galería para revisar los sprites
         //   http://localhost:8080/?salas    buscar sala / lobby
-        const parametros = new URLSearchParams(window.location.search);
+        const parametros = new URLSearchParams(import.meta.env.DEV ? window.location.search : '');
         const siguiente = parametros.has('sprites')
             ? 'EscenaGaleriaSprites'
             : parametros.has('salas') ? 'EscenaListaSalas' : 'EscenaLogin';

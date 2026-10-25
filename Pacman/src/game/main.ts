@@ -1,6 +1,3 @@
-import { GameOver } from './scenes/GameOver';
-import { Game as MainGame } from './scenes/Game';
-import { MainMenu } from './scenes/MainMenu';
 import { AUTO, Game, Scale } from 'phaser';
 import { EscenaCarga } from '../presentacion/escenas/EscenaCarga';
 import { EscenaGaleriaSprites } from '../presentacion/escenas/EscenaGaleriaSprites';
@@ -8,6 +5,7 @@ import { EscenaListaSalas } from '../presentacion/escenas/EscenaListaSalas';
 import { EscenaLogin } from '../presentacion/escenas/EscenaLogin';
 import { EscenaNombre } from '../presentacion/escenas/EscenaNombre';
 import { EscenaRegistro } from '../presentacion/escenas/EscenaRegistro';
+import { EscenaServidor } from '../presentacion/escenas/EscenaServidor';
 import { EscenaSala } from '../presentacion/escenas/EscenaSala';
 import { EscenaVerificacion } from '../presentacion/escenas/EscenaVerificacion';
 import { EscenaMenu } from '../presentacion/escenas/EscenaMenu';
@@ -45,19 +43,18 @@ const config: Phaser.Types.Core.GameConfig = {
     scene: [
         EscenaCarga,
         EscenaLogin,
+        EscenaServidor,
         EscenaRegistro,
         EscenaVerificacion,
         EscenaNombre,
         EscenaMenu,
         EscenaRanking,
         EscenaHistorial,
-        EscenaGaleriaSprites,
         EscenaListaSalas,
         EscenaSala,
         EscenaJuego,
-        MainMenu,
-        MainGame,
-        GameOver
+        // Herramienta de desarrollo (?sprites): no se incluye en el APK
+        ...(import.meta.env.DEV ? [EscenaGaleriaSprites] : [])
     ]
 };
 

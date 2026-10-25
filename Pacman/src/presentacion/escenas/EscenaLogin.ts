@@ -2,6 +2,7 @@ import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { Scene } from 'phaser';
 import {
     CODIGO_CORREO_NO_VERIFICADO,
+    ERROR_SIN_CONEXION,
     actualizarUsuarioSesion,
     borrarSesion,
     guardarSesion,
@@ -16,12 +17,15 @@ import { crearPanel } from '../ui/Panel';
 import { DatosVerificacion } from './EscenaVerificacion';
 import { Aviso, continuarConSesion, dibujarPantallaSesion } from './FlujoSesion';
 
+const AYUDA_SIN_CONEXION = 'No se pudo conectar con el servidor.\nRevisa la IP de la PC en SERVIDOR.';
+
 export class EscenaLogin extends Scene {
     private campoUsuario: HTMLInputElement;
     private campoContrasena: HTMLInputElement;
     private aviso: Aviso;
     private botonEntrar: Boton;
     private botonCrear: Boton;
+    private botonServidor: Boton;
     private ocupado = false;
     private avisoInicial = '';
 
@@ -75,6 +79,16 @@ export class EscenaLogin extends Scene {
             alPulsar: () => this.scene.start('EscenaRegistro'),
         });
 
+        // Arriba a la derecha: casi no se usa, pero hace falta al cambiar de red.
+        // Cabe aunque la pantalla solo muestre 700 de ancho (formularios).
+        this.botonServidor = new Boton(this, centro + 256, 56, 'SERVIDOR', {
+            ancho: 150,
+            alto: 44,
+            tamanoTexto: 12,
+            color: COLOR.GRIS_CLARO,
+            alPulsar: () => this.scene.start('EscenaServidor'),
+        });
+
         this.campoUsuario.focus();
         this.revisarSesionGuardada();
     }
@@ -98,8 +112,16 @@ export class EscenaLogin extends Scene {
             return;
         }
 
-        borrarSesion();
+        // Sin servidor no se sabe si la sesión sigue vigente: se conserva para
+        // volver a revisarla al elegir otro servidor
         this.setOcupado(false);
+
+        if (respuesta.error === ERROR_SIN_CONEXION) {
+            this.aviso.error(AYUDA_SIN_CONEXION);
+            return;
+        }
+
+        borrarSesion();
     }
 
     private async entrar(): Promise<void> {
@@ -135,7 +157,9 @@ export class EscenaLogin extends Scene {
 
         if (!respuesta.success || !respuesta.data) {
             this.setOcupado(false);
-            this.aviso.error(respuesta.error || 'No se pudo iniciar sesión.');
+            this.aviso.error(respuesta.error === ERROR_SIN_CONEXION
+                ? AYUDA_SIN_CONEXION
+                : respuesta.error || 'No se pudo iniciar sesión.');
             this.campoContrasena.value = '';
             this.campoContrasena.focus();
             return;
@@ -149,6 +173,7 @@ export class EscenaLogin extends Scene {
         this.ocupado = ocupado;
         this.botonEntrar.setHabilitado(!ocupado);
         this.botonCrear.setHabilitado(!ocupado);
+        this.botonServidor.setHabilitado(!ocupado);
         habilitarCampos([this.campoUsuario, this.campoContrasena], !ocupado);
         this.aviso.info(texto);
     }

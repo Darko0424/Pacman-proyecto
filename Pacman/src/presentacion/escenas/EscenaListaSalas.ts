@@ -21,9 +21,6 @@ const ALTO_FILA = 80;
 const SEPARACION_FILA = 12;
 const PRIMERA_FILA_Y = 170;
 
-// Escena a la que vuelve "VOLVER"; si todavía no existe se usa la de la plantilla
-const ESCENA_MENU = 'EscenaMenu';
-const ESCENA_MENU_PLANTILLA = 'MainMenu';
 
 interface AspectoEstado {
     texto: string;
@@ -212,9 +209,7 @@ export class EscenaListaSalas extends Scene {
     }
 
     private volverAlMenu(): void {
-        const existe = this.scene.manager.keys[ESCENA_MENU] !== undefined;
-
-        this.scene.start(existe ? ESCENA_MENU : ESCENA_MENU_PLANTILLA);
+        this.scene.start('EscenaMenu');
     }
 
     // ---------- Dibujo ----------

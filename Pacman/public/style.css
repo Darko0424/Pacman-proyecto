@@ -23,10 +23,22 @@ body {
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+    /* Solo se desplaza para mostrar un campo cuando el teclado lo tapa: sin barra */
+    scrollbar-width: none;
+}
+
+#app::-webkit-scrollbar {
+    display: none;
 }
 
 #app[data-pantalla="juego"] {
     overflow: hidden;
+}
+
+/* Como inline el canvas deja abajo el hueco de una línea de texto y sobra
+   altura: aparecería desplazamiento */
+#game-container canvas {
+    display: block;
 }
 
 /* Scale.FIT ajusta el juego al tamaño de este contenedor */
@@ -36,14 +48,17 @@ body {
     height: 100%;
 }
 
-/* ---------- Campos de texto de las pantallas de sesión ---------- */
+/* ---------- Campos de texto de las pantallas de sesión ----------
+   Los tamaños se dividen entre la escala para verse iguales en cualquier
+   pantalla, con un tope: en celulares bajos (escala ~0.5) un campo más alto
+   taparía las etiquetas de la interfaz de 1024 x 768 */
 .campo-texto {
     width: 440px;
     box-sizing: border-box;
     padding: 12px 14px;
     font-family: "Press Start 2P", monospace;
-    font-size: max(14px, calc(16px / var(--escala-juego, 1)));
-    min-height: calc(44px / var(--escala-juego, 1));
+    font-size: clamp(14px, calc(16px / var(--escala-juego, 1)), 22px);
+    min-height: min(calc(44px / var(--escala-juego, 1)), 56px);
     color: #ffffff;
     background-color: #272736;
     border: 3px solid #4b5bab;
@@ -75,7 +90,7 @@ body {
 }
 
     .campo-contrasena .campo-texto {
-        padding-right: max(110px, calc(108px / var(--escala-juego, 1)));
+        padding-right: clamp(110px, calc(108px / var(--escala-juego, 1)), 150px);
     }
 
 .boton-ver {
@@ -85,8 +100,8 @@ body {
     transform: translateY(-50%);
     padding: 6px;
     font-family: "Press Start 2P", monospace;
-    font-size: max(10px, calc(12px / var(--escala-juego, 1)));
-    min-height: calc(40px / var(--escala-juego, 1));
+    font-size: clamp(10px, calc(12px / var(--escala-juego, 1)), 16px);
+    min-height: min(calc(40px / var(--escala-juego, 1)), 48px);
     color: #4da6ff;
     background: none;
     border: none;

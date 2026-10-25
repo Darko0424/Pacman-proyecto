@@ -2,7 +2,7 @@ import { TDificultad } from '../modelos/dificultad.model';
 import { TObjeto } from '../modelos/objeto.model';
 import { IRespuesta } from '../modelos/respuesta.model';
 import { TUsuario } from '../modelos/usuario.model';
-import { URL_API } from './Configuracion';
+import { obtenerUrlApi } from './Configuracion';
 import { SugerenciasNombre } from '../modelos/sugerencias-nombre.model';
 import { RankingEntrada, RolRanking } from '../modelos/ranking-entrada.model';
 import { RankingTotalEntrada } from '../modelos/ranking-total-entrada.model';
@@ -19,6 +19,7 @@ export interface SesionIniciada {
 
 const CLAVE_SESION = 'pacman.sesion';
 export const CODIGO_CORREO_NO_VERIFICADO = 'CORREO_NO_VERIFICADO';
+export const ERROR_SIN_CONEXION = 'No se pudo conectar con el servidor.';
 
 // ---------- Sesión guardada en el dispositivo ----------
 
@@ -79,7 +80,7 @@ async function solicitar<T>(metodo: 'GET' | 'POST', ruta: string, cuerpo?: unkno
     }
 
     try {
-        const respuesta = await fetch(`${URL_API}/${ruta}`, {
+        const respuesta = await fetch(`${obtenerUrlApi()}/${ruta}`, {
             method: metodo,
             headers: encabezados,
             body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
@@ -87,7 +88,30 @@ async function solicitar<T>(metodo: 'GET' | 'POST', ruta: string, cuerpo?: unkno
 
         return (await respuesta.json()) as IRespuesta<T>;
     } catch {
-        return { success: false, data: null, error: 'No se pudo conectar con el servidor.' };
+        return { success: false, data: null, error: ERROR_SIN_CONEXION };
+    }
+}
+
+// Comprueba que en esa dirección responda PacmanApi con su base de datos,
+// antes de guardarla como servidor
+export async function probarServidor(url: string): Promise<IRespuesta<boolean>> {
+    const cancelar = new AbortController();
+    const espera = setTimeout(() => cancelar.abort(), 5000);
+
+    try {
+        const respuesta = await fetch(`${url}/api/Dificultad/Listar`, { signal: cancelar.signal });
+        const cuerpo = (await respuesta.json()) as IRespuesta<unknown>;
+
+        return cuerpo.success
+            ? { success: true, data: true, error: '' }
+            : { success: false, data: null, error: 'El servidor respondió, pero sin base de datos.' };
+    } catch (error) {
+        // El detalle (bloqueo de HTTP, CORS, tiempo agotado) se ve con chrome://inspect
+        console.warn(`No respondió ${url}`, error);
+
+        return { success: false, data: null, error: 'No hay ningún servidor de Pac-Man en esa dirección.' };
+    } finally {
+        clearTimeout(espera);
     }
 }
 

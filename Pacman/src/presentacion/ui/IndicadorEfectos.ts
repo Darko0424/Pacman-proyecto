@@ -2,7 +2,7 @@ import { GameObjects, Scene } from 'phaser';
 import { TObjeto } from '../../modelos/objeto.model';
 import { Bando } from '../../modelos/tiempo-real/enums';
 import { EfectoDto } from '../../modelos/tiempo-real/estado-partida.dto';
-import { COLOR, css, estiloTexto } from './Paleta';
+import { COLOR, estiloTexto, ponerColor } from './Paleta';
 
 const MAXIMO_LINEAS = 4;
 
@@ -22,16 +22,15 @@ export class IndicadorEfectos {
             const efecto = efectos[i];
 
             if (!efecto) {
-                linea.setText(i === 0 && efectos.length === 0 ? 'SIN EFECTOS' : '');
-                linea.setColor(css(COLOR.GRIS));
+                ponerColor(linea.setText(i === 0 && efectos.length === 0 ? 'SIN EFECTOS' : ''), COLOR.GRIS);
                 return;
             }
 
             const restante = Math.max(0, efecto.finSegundos - tiempo);
             const nombre = (objetos.get(efecto.idObjeto)?.nombre ?? efecto.tipoEfecto).toUpperCase();
-            const color = css(efecto.bandoOrigen === Bando.PacMan ? COLOR.PACMAN : COLOR.ROSA);
+            const color = efecto.bandoOrigen === Bando.PacMan ? COLOR.PACMAN : COLOR.ROSA;
 
-            linea.setText(`${nombre} ${restante.toFixed(1)}s`).setColor(color);
+            ponerColor(linea.setText(`${nombre} ${restante.toFixed(1)}s`), color);
         });
     }
 }

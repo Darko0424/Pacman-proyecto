@@ -6,7 +6,7 @@ import { Bando } from '../../modelos/tiempo-real/enums';
 import { EstadoPartidaDto } from '../../modelos/tiempo-real/estado-partida.dto';
 import { Boton } from './Boton';
 import { IndicadorEfectos } from './IndicadorEfectos';
-import { COLOR, css, estiloTexto } from './Paleta';
+import { COLOR, estiloTexto, ponerColor } from './Paleta';
 import { Recuadro, crearPanel } from './Panel';
 import { cambiarSilencio } from '../sonidos/Volumen';
 
@@ -159,12 +159,12 @@ export class HUD {
 
         if (mio) {
             const esPacMan = mio.bando === Bando.PacMan;
-            this.rol.setText(esPacMan ? 'ERES PAC-MAN' : 'ERES FANTASMA')
-                .setColor(css(COLOR_PERSONAJE[mio.actor.idPersonaje] ?? COLOR.BLANCO));
+            ponerColor(this.rol.setText(esPacMan ? 'ERES PAC-MAN' : 'ERES FANTASMA'),
+                COLOR_PERSONAJE[mio.actor.idPersonaje] ?? COLOR.BLANCO);
             this.puntaje.setText(String(mio.actor.puntuacion));
             this.vidas.setText(`VIDAS x${mio.actor.vidasRestantes}`);
         } else {
-            this.rol.setText('ESPECTADOR').setColor(css(COLOR.GRIS));
+            ponerColor(this.rol.setText('ESPECTADOR'), COLOR.GRIS);
         }
 
         this.filas.forEach((fila, i) => {
@@ -184,9 +184,8 @@ export class HUD {
             const esMio = actor.idPersonaje === mio?.actor.idPersonaje;
 
             fila.marca.dibujar(actor.eliminado ? null : color, color, 2);
-            fila.nombre
-                .setText(nombreActor(actor).slice(0, this.largoNombre))
-                .setColor(css(actor.eliminado ? COLOR.GRIS : esMio ? COLOR.PACMAN : COLOR.BLANCO));
+            ponerColor(fila.nombre.setText(nombreActor(actor).slice(0, this.largoNombre)),
+                actor.eliminado ? COLOR.GRIS : esMio ? COLOR.PACMAN : COLOR.BLANCO);
             fila.datos.setText(`x${actor.vidasRestantes} ${String(actor.puntuacion).padStart(5, ' ')}`);
         });
 

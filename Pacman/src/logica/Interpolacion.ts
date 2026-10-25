@@ -3,7 +3,20 @@ import { EstadoPartidaDto } from '../modelos/tiempo-real/estado-partida.dto';
 
 // El servidor manda unos 20 estados por segundo. Para que el movimiento se vea
 // continuo se dibuja un poco en el pasado, siempre entre dos estados recibidos.
-const RETRASO_SEG = 0.1;
+// Si un estado llega más tarde que ese margen el dibujo se congela y luego
+// salta (los tirones en Wi-Fi), así que el margen crece con lo irregular que
+// llegan los estados, entre estos límites.
+const RETRASO_MINIMO_SEG = 0.1;
+const RETRASO_MAXIMO_SEG = 0.3;
+
+// ReglasJuego.DuracionTick: lo que hay entre dos estados aunque la red sea perfecta
+const SEGUNDOS_ENTRE_ESTADOS = 0.05;
+
+// Cuánto se olvida por estado el peor atraso medido (a la mitad en unos 7 s),
+// y qué tan rápido se mueve el margen hacia el nuevo valor (de golpe se vería un salto)
+const OLVIDO_ATRASO = 0.995;
+const SUAVIZADO_RETRASO = 0.05;
+
 const MAXIMO_ESTADOS = 30;
 
 // Si entre dos estados un personaje salta más que esto (reaparición), no se
@@ -67,6 +80,10 @@ export class Interpolacion {
     // Reloj local menos tiempo de simulación; se ajusta con cada estado
     private desfase: number | null = null;
 
+    // Peor atraso reciente respecto a la llegada más rápida, y el margen en uso
+    private atraso = 0;
+    private retraso = RETRASO_MINIMO_SEG;
+
     get ultimo(): EstadoPartidaDto | null {
         return this.estados[this.estados.length - 1] ?? null;
     }
@@ -74,6 +91,8 @@ export class Interpolacion {
     reiniciar(): void {
         this.estados = [];
         this.desfase = null;
+        this.atraso = 0;
+        this.retraso = RETRASO_MINIMO_SEG;
     }
 
     agregar(estado: EstadoPartidaDto, ahora: number): void {
@@ -98,6 +117,11 @@ export class Interpolacion {
         this.desfase = this.desfase === null || medido < this.desfase
             ? medido
             : this.desfase * 0.98 + medido * 0.02;
+
+        this.atraso = Math.max(medido - this.desfase, this.atraso * OLVIDO_ATRASO);
+        const objetivo = Math.min(RETRASO_MAXIMO_SEG,
+            Math.max(RETRASO_MINIMO_SEG, SEGUNDOS_ENTRE_ESTADOS + this.atraso));
+        this.retraso += (objetivo - this.retraso) * SUAVIZADO_RETRASO;
     }
 
     muestrear(ahora: number): Muestra | null {
@@ -109,7 +133,7 @@ export class Interpolacion {
 
         const primero = this.estados[0];
         const ultimo = this.estados[total - 1];
-        const objetivo = ahora - this.desfase - RETRASO_SEG;
+        const objetivo = ahora - this.desfase - this.retraso;
 
         if (objetivo <= primero.tiempoSimulacionSegundos) {
             return { anterior: primero, siguiente: primero, fraccion: 0, tiempoSimulacion: primero.tiempoSimulacionSegundos };

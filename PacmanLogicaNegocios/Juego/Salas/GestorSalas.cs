@@ -606,8 +606,16 @@ public sealed class GestorSalas : IGestorSalas, IAsyncDisposable, IDisposable
             long ahora = _tiempo.GetTimestamp();
             var transcurrido = _tiempo.GetElapsedTime(contexto.UltimoAvance, ahora);
             contexto.UltimoAvance = ahora;
-            contexto.Eventos = motor.Avanzar(transcurrido);
-            contexto.EstadoPendiente = true;
+            var tiempoAnterior = motor.Partida.TiempoSimulacion;
+            var eventos = motor.Avanzar(transcurrido);
+
+            // El temporizador no es exacto: si no alcanzó a correr un paso, el estado
+            // sería igual al anterior y el cliente lo descartaría
+            if (motor.Partida.TiempoSimulacion != tiempoAnterior || eventos.Count > 0 || motor.NivelTerminado)
+            {
+                contexto.Eventos = eventos;
+                contexto.EstadoPendiente = true;
+            }
         }
 
         if (motor.NivelTerminado || contexto.Sala.Estado == EstadoSala.Finalizada)

@@ -6,6 +6,9 @@ import { prepararPantalla, ANCHO_INTERFAZ, ALTO_INTERFAZ } from './PantallaAdapt
 // Se dibuja con Graphics porque en Phaser 4.0.0 Rectangle.setRounded con
 // relleno rompe el renderizado WebGL ("pipeline is not defined")
 export class Recuadro extends GameObjects.Graphics {
+    // El HUD lo vuelve a pintar con cada estado: si nada cambió no se redibuja
+    private trazo = '';
+
     constructor(
         escena: Scene,
         x: number,
@@ -24,7 +27,13 @@ export class Recuadro extends GameObjects.Graphics {
     dibujar(relleno: number | null, borde: number | null = null, grosor = 3): this {
         const x = this.centrado ? -this.ancho / 2 : 0;
         const y = this.centrado ? -this.alto / 2 : 0;
+        const trazo = `${relleno}:${borde}:${grosor}`;
 
+        if (trazo === this.trazo) {
+            return this;
+        }
+
+        this.trazo = trazo;
         this.clear();
 
         if (relleno !== null) {
@@ -53,7 +62,7 @@ export function crearPanel(
 
 // Marco morado de toda la pantalla como el del laberinto
 export function dibujarMarco(escena: Scene): void {
-    const formulario = ['EscenaLogin', 'EscenaRegistro', 'EscenaVerificacion', 'EscenaNombre']
+    const formulario = ['EscenaLogin', 'EscenaRegistro', 'EscenaVerificacion', 'EscenaNombre', 'EscenaServidor']
         .includes(escena.sys.settings.key);
     prepararPantalla(escena, formulario ? 'formulario' : 'interfaz');
 
