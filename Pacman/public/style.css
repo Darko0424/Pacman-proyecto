@@ -48,6 +48,50 @@ body {
     height: 100%;
 }
 
+/* La cámara del lector QR se dibuja detrás de la WebView. Durante el escaneo
+   dejamos transparentes los fondos y mostramos solo la indicación y cancelar. */
+html.escaneando-servidor-qr,
+body.escaneando-servidor-qr {
+    background: transparent;
+}
+
+body.escaneando-servidor-qr #app {
+    visibility: hidden;
+}
+
+.visor-servidor-qr {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    padding: max(24px, env(safe-area-inset-top, 0px)) 24px
+        max(24px, env(safe-area-inset-bottom, 0px));
+    color: #ffffff;
+    background: transparent;
+    text-align: center;
+    font: 16px system-ui, sans-serif;
+}
+
+.visor-servidor-qr p {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(20, 20, 30, 0.8);
+}
+
+.visor-servidor-qr button {
+    min-width: 160px;
+    min-height: 48px;
+    border: 2px solid #ffe478;
+    border-radius: 8px;
+    color: #ffe478;
+    background: rgba(20, 20, 30, 0.9);
+    font: inherit;
+}
+
 /* ---------- Campos de texto de las pantallas de sesión ----------
    Los tamaños se dividen entre la escala para verse iguales en cualquier
    pantalla, con un tope: en celulares bajos (escala ~0.5) un campo más alto

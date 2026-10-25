@@ -1,7 +1,7 @@
 {
   "name": "pacman-multijugador",
   "description": "Cliente Phaser de Pac-Man multijugador (web y Android con Capacitor).",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
     "vite": "^6.3.1"
   },
   "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "8.2.1",
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "@fontsource/press-start-2p": "5.2.7",

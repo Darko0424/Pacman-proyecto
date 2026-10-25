@@ -91,6 +91,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.MapPaginaConexionLocal();
+    app.ProgramarAperturaPaginaConexion();
 }
 
 app.UseHttpsRedirection();

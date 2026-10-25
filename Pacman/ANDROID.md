@@ -24,7 +24,9 @@ Pacman/descargas/PacmanMultijugador-debug.apk
 
 La carpeta `descargas` también contiene `prueba-android.json` con la dirección incluida, la fecha y la huella SHA-256. No se incluyen contraseñas de SQL ni del correo en el APK.
 
-La dirección que se indica al compilar es solo la predeterminada. Si cambian de red o de PC no hace falta otro APK: en la pantalla de inicio de sesión toca **SERVIDOR**, escribe la IP de la PC (por ejemplo `192.168.1.100`; el puerto 5253 se agrega solo) y pulsa **PROBAR Y GUARDAR**. La app comprueba que PacmanApi responda antes de guardarla, y la recuerda en el teléfono. **PREDETERMINADA** vuelve a la del APK. La compilación del navegador conserva su configuración habitual.
+La dirección que se indica al compilar es solo la predeterminada. Si cambian de red o de PC no hace falta otro APK. Con `PacmanApi` iniciado con el perfil **red-local**, se abren Swagger y la página del QR en el navegador de la PC. Si la segunda pestaña no aparece, abre `http://localhost:5253/conectar`. En la app toca **SERVIDOR → ESCANEAR QR** y concede permiso de cámara. La app comprueba que la API y la base respondan, guarda la dirección y vuelve al inicio de sesión. El QR solo contiene la dirección local de la API.
+
+También puedes escribir la IP en **SERVIDOR** (por ejemplo `192.168.1.100`; el puerto 5253 se agrega solo) y pulsar **PROBAR Y GUARDAR**. Esta opción funciona si la cámara no está disponible. **PREDETERMINADA** vuelve a la dirección incluida al compilar. La compilación del navegador conserva su configuración habitual.
 
 ## Iniciar el servidor y probar
 

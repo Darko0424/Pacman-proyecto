@@ -22,7 +22,8 @@ envía las direcciones del jugador.
 
 En el navegador el cliente busca la API en el mismo equipo que sirve la página,
 puerto 5253. En la app de Android la dirección se elige en la pantalla de inicio
-de sesión (botón **SERVIDOR**) y queda guardada en el teléfono; ver
+de sesión (botón **SERVIDOR**), escaneando el QR de `http://localhost:5253/conectar`
+en la PC o escribiendo la IP. Queda guardada en el teléfono; ver
 [ANDROID.md](ANDROID.md).
 
 ## Estructura

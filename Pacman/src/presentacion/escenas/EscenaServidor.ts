@@ -1,6 +1,8 @@
 import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { Scene } from 'phaser';
+import { Capacitor } from '@capacitor/core';
 import { probarServidor } from '../../servicios/ClienteApi';
+import { escanearServidorQr, leerUrlServidorQr } from '../../servicios/EscanerServidorQr';
 import {
     URL_API_PREDETERMINADA,
     guardarUrlApi,
@@ -33,6 +35,7 @@ export class EscenaServidor extends Scene {
 
     create(): void {
         const centro = ANCHO_INTERFAZ / 2;
+        const esAndroid = Capacitor.getPlatform() === 'android';
 
         this.ocupado = false;
 
@@ -49,7 +52,9 @@ export class EscenaServidor extends Scene {
         this.campoServidor.value = sinEsquema(obtenerUrlApi());
 
         this.add
-            .text(centro, 375, 'La PC que corre PacmanApi (perfil red-local),\nen la misma red Wi-Fi que el celular.', estiloTexto(10, COLOR.GRIS_CLARO))
+            .text(centro, 375,
+                'PC y celular en la misma red.\nEn la PC abre:\nhttp://localhost:5253/conectar',
+                estiloTexto(10, COLOR.GRIS_CLARO))
             .setOrigin(0.5)
             .setAlign('center')
             .setLineSpacing(8);
@@ -57,24 +62,72 @@ export class EscenaServidor extends Scene {
             .text(centro, 430, `Predeterminada: ${URL_API_PREDETERMINADA}`, estiloTexto(10, COLOR.GRIS))
             .setOrigin(0.5);
 
-        this.aviso = new Aviso(this, 510);
+        this.aviso = new Aviso(this, esAndroid ? 490 : 510);
 
         this.botones = [
-            new Boton(this, centro, 580, 'PROBAR Y GUARDAR', {
+            ...(esAndroid ? [new Boton(this, centro, 550, 'ESCANEAR QR', {
+                ancho: 360,
+                color: COLOR.CELESTE,
+                alPulsar: () => this.escanearQr(),
+            })] : []),
+            new Boton(this, centro, esAndroid ? 620 : 580, 'PROBAR Y GUARDAR', {
                 ancho: 360,
                 color: COLOR.PACMAN,
                 alPulsar: () => this.guardar(),
             }),
-            new Boton(this, centro - 155, 660, 'PREDETERMINADA', {
+            new Boton(this, centro - 155, esAndroid ? 700 : 660, 'PREDETERMINADA', {
                 ancho: 290,
                 tamanoTexto: 12,
                 alPulsar: () => this.restablecer(),
             }),
-            new Boton(this, centro + 155, 660, 'VOLVER', {
+            new Boton(this, centro + 155, esAndroid ? 700 : 660, 'VOLVER', {
                 ancho: 290,
                 alPulsar: () => this.volver(),
             }),
         ];
+    }
+
+    private async escanearQr(): Promise<void> {
+        if (this.ocupado) {
+            return;
+        }
+
+        const cancelar = new AbortController();
+        const alSalir = () => cancelar.abort();
+        this.events.once('shutdown', alSalir);
+        this.setOcupado(true, 'Abriendo cámara...');
+
+        try {
+            const contenido = await escanearServidorQr(cancelar.signal);
+
+            if (!this.sys.isActive()) {
+                return;
+            }
+
+            this.setOcupado(false);
+
+            if (contenido === null) {
+                this.aviso.info('Escaneo cancelado. Puedes escribir la IP.');
+                return;
+            }
+
+            const url = leerUrlServidorQr(contenido);
+
+            if (!url) {
+                this.aviso.error('Ese QR no es de Pac-Man. Usa el que muestra la PC.');
+                return;
+            }
+
+            this.campoServidor.value = sinEsquema(url);
+            await this.guardar();
+        } catch (error) {
+            if (this.sys.isActive()) {
+                this.setOcupado(false);
+                this.aviso.error(error instanceof Error ? error.message : 'No se pudo abrir la cámara.');
+            }
+        } finally {
+            this.events.off('shutdown', alSalir);
+        }
     }
 
     private async guardar(): Promise<void> {
