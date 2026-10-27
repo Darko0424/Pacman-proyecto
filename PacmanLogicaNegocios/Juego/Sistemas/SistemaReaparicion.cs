@@ -21,7 +21,8 @@ internal static class SistemaReaparicion
 
             var muerte = contexto.Muertes.GetValueOrDefault(actor.IdPersonaje, TimeSpan.Zero);
 
-            if (contexto.Tiempo - muerte < ReglasJuego.DemoraReaparicion)
+            if (contexto.Tiempo - muerte <
+                ReglasJuego.DemoraReaparicionDe(actor, contexto.Partida.Configuracion))
             {
                 continue;
             }

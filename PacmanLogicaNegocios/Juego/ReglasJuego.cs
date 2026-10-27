@@ -1,4 +1,5 @@
 using PacmanDominio.Juego;
+using PacmanDominio.Juego.Actores;
 
 namespace PacmanLogicaNegocios.Juego;
 
@@ -34,6 +35,14 @@ public static class ReglasJuego
 
     // Tiempo entre perder una vida y reaparecer
     public static TimeSpan DemoraReaparicion { get; } = TimeSpan.FromSeconds(2);
+
+    // En el modo clásico los fantasmas tardan lo que elija el anfitrión
+    public static TimeSpan DemoraReaparicionDe(Entidad actor, ConfiguracionSala configuracion)
+    {
+        return actor.Bando == Bando.Fantasma && configuracion.ModoClasico
+            ? TimeSpan.FromSeconds(configuracion.SegundosReaparicionFantasmas)
+            : DemoraReaparicion;
+    }
 
     // Dos fantasmas que chocan quedan aturdidos y vuelven a un punto de reaparición
     public static TimeSpan DuracionAturdimiento { get; } = TimeSpan.FromSeconds(2);

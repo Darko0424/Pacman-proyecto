@@ -48,7 +48,8 @@ public sealed class AsignadorPersonajes
             }
             else
             {
-                fantasmas.Add(new Fantasma(idPersonaje, idUsuario, posicion, sala.Configuracion.Vidas));
+                fantasmas.Add(new Fantasma(idPersonaje, idUsuario, posicion, sala.Configuracion.Vidas,
+                    vidasInfinitas: sala.Configuracion.ModoClasico));
             }
         }
 
@@ -75,6 +76,16 @@ public sealed class AsignadorPersonajes
                 }
 
                 usuarios.Add(personaje, jugador.IdUsuario);
+            }
+            else if (sala.Configuracion.BandosFijos &&
+                sala.Estado == EstadoSala.Transicion &&
+                sala.Jugadores.All(jugador => jugador.IdPersonaje.HasValue))
+            {
+                // Bandos fijos: cada uno repite el personaje del nivel anterior
+                foreach (var jugador in sala.Jugadores)
+                {
+                    usuarios.Add(jugador.IdPersonaje!.Value, jugador.IdUsuario);
+                }
             }
             else
             {

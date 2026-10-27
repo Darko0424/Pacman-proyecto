@@ -14,6 +14,8 @@ interface ActorDto {
     // Fracción recorrida hacia la siguiente casilla (0 a 1)
     avance: number;
     vidasRestantes: number;
+    // Fantasmas del modo clásico: nunca se quedan sin vidas
+    vidasInfinitas: boolean;
     eliminado: boolean;
     reaparicionPendiente: boolean;
     esInvencible: boolean;

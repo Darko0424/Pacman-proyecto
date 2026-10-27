@@ -12,6 +12,10 @@ public sealed class ConfiguracionSalaDto
     // JSON usa el valor numérico definido por FrecuenciaCajas (0 = sin cajas)
     public FrecuenciaCajas FrecuenciaCajas { get; init; }
 
+    public bool BandosFijos { get; init; }
+    public bool ModoClasico { get; init; }
+    public int SegundosReaparicionFantasmas { get; init; } = ConfiguracionSala.ReaparicionFantasmasPorDefecto;
+
     public static ConfiguracionSalaDto Crear(ConfiguracionSala configuracion)
     {
         ArgumentNullException.ThrowIfNull(configuracion);
@@ -21,13 +25,17 @@ public sealed class ConfiguracionSalaDto
             IdDificultad = configuracion.IdDificultad,
             Vidas = configuracion.Vidas,
             ColisionEntrePacMan = configuracion.ColisionEntrePacMan,
-            FrecuenciaCajas = configuracion.FrecuenciaCajas
+            FrecuenciaCajas = configuracion.FrecuenciaCajas,
+            BandosFijos = configuracion.BandosFijos,
+            ModoClasico = configuracion.ModoClasico,
+            SegundosReaparicionFantasmas = configuracion.SegundosReaparicionFantasmas
         };
     }
 
     // Lanza ArgumentException si algún valor está fuera de rango
     public ConfiguracionSala ConvertirAConfiguracion()
     {
-        return new ConfiguracionSala(IdDificultad, Vidas, ColisionEntrePacMan, FrecuenciaCajas);
+        return new ConfiguracionSala(IdDificultad, Vidas, ColisionEntrePacMan, FrecuenciaCajas,
+            BandosFijos, ModoClasico, SegundosReaparicionFantasmas);
     }
 }
