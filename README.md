@@ -382,13 +382,8 @@ Puede que Windows pida permitir el acceso en el firewall.
 ## APK de prueba para Android
 
 El proyecto nativo está en `Pacman/android`, con su configuración en
-`Pacman/capacitor.config.json`. Desde `Pacman`, ejecutar:
-
-```powershell
-npm run android:apk -- -ServidorApi http://IP-DE-TU-PC:5253
-```
-
-El APK queda en `Pacman/descargas/PacmanMultijugador-debug.apk`. Para probarlo,
+`Pacman/capacitor.config.json`. La guía de Android explica cómo generar la APK
+desde Android Studio. Para probarla,
 iniciar `PacmanApi` con el perfil `red-local`, abrir `http://localhost:5253/conectar`
 en la PC y escanear el QR desde **SERVIDOR** en la app. El QR de red local requiere
 la misma Wi-Fi; un Dev Tunnel persistente de Visual Studio permite usar otras redes.

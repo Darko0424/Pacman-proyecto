@@ -6,23 +6,26 @@ El cliente Phaser se empaqueta con Capacitor. La API de C# y SQL Server siguen e
 
 Requisitos: Node.js 22 o posterior, las dependencias de `npm ci`, Android SDK Platform 36 y un JDK entre 21 y 24 compatible con Gradle 8.14.3.
 
-Desde la carpeta `Pacman`:
+Desde la carpeta `Pacman`, configura la dirección predeterminada de la API y prepara el proyecto Android:
 
 ```powershell
-npm run android:apk -- -ServidorApi http://IP-DE-TU-PC:5253
+$env:VITE_API_URL = 'http://IP-DE-TU-PC:5253'
+npm run build -- --mode android
+npm run android:sync
+npm run android:open
 ```
 
-Sustituye `IP-DE-TU-PC` por la IPv4 del adaptador Wi-Fi; puedes verla con `ipconfig`. El celular debe poder acceder a esa misma PC. `localhost` en el celular apunta al propio teléfono.
+Sustituye `IP-DE-TU-PC` por la IPv4 del adaptador Wi-Fi; puedes verla con `ipconfig`. El celular debe poder acceder a esa misma PC. `localhost` en el celular apunta al propio teléfono. En Android Studio selecciona la variante **debug** y usa **Build → Build APK(s)**.
 
-Como alternativa, copia `.env.android.example` a `.env.android.local`, escribe allí la URL y ejecuta `npm run android:apk`. Este archivo local está ignorado por Git.
+Como alternativa, copia `.env.android.example` a `.env.android.local` y escribe allí la URL antes de compilar. Este archivo local está ignorado por Git.
 
-El asistente verifica TypeScript, compila el cliente en modo Android, sincroniza Capacitor y genera un APK firmado con la clave de depuración. El resultado queda en:
+El APK de prueba queda en:
 
 ```text
-Pacman/descargas/PacmanMultijugador-debug.apk
+Pacman/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-La carpeta `descargas` también contiene `prueba-android.json` con la dirección incluida, la fecha y la huella SHA-256. No se incluyen contraseñas de SQL ni del correo en el APK.
+No se incluyen contraseñas de SQL ni del correo en el APK.
 
 La dirección que se indica al compilar es solo la predeterminada. Si cambian de red o de PC no hace falta otro APK. Con `PacmanApi` iniciado con el perfil **red-local**, se abren Swagger y la página del QR en el navegador de la PC. Si la segunda pestaña no aparece, abre `http://localhost:5253/conectar`. En la app toca **SERVIDOR → ESCANEAR QR** y concede permiso de cámara. La app comprueba que la API y la base respondan, guarda la dirección y vuelve al inicio de sesión. Elige el QR de la red local o el del túnel según cómo se conectará el celular.
 
@@ -55,6 +58,6 @@ El permiso HTTP (`android/app/src/debug/AndroidManifest.xml`) y el contenido mix
 
 ## Android Studio
 
-`npm run android:open` abre el proyecto nativo de `Pacman/android`. Después de cambiar código web, vuelve a generar el APK con el asistente para incluirlo.
+`npm run android:open` abre el proyecto nativo de `Pacman/android`. Después de cambiar código web, vuelve a ejecutar `npm run build -- --mode android` y `npm run android:sync` antes de generar el APK en Android Studio.
 
 Documentación oficial: [Android en Capacitor](https://capacitorjs.com/docs/android) y [configuración de Capacitor](https://capacitorjs.com/docs/config).

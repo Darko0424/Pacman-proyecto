@@ -15,7 +15,6 @@ envía las direcciones del jugador.
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo en `http://localhost:8080` (también accesible desde la red local). |
 | `npm run build` | Compilación de producción en `dist`. |
-| `npm run android:apk` | Genera el APK de prueba (ver [ANDROID.md](ANDROID.md)). |
 | `npm run android:open` | Abre el proyecto nativo en Android Studio. |
 
 ## Servidor
