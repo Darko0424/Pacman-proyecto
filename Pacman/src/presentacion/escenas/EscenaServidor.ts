@@ -1,7 +1,6 @@
 import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { Scene } from 'phaser';
 import { Capacitor } from '@capacitor/core';
-import { probarServidor } from '../../servicios/ClienteApi';
 import { escanearServidorQr, leerUrlServidorQr } from '../../servicios/EscanerServidorQr';
 import {
     URL_API_PREDETERMINADA,
@@ -42,7 +41,7 @@ export class EscenaServidor extends Scene {
         dibujarPantallaSesion(this, 'SERVIDOR');
         crearPanel(this, centro - 260, 220, 520, 250);
 
-        this.add.text(centro - 220, 250, 'IP de la PC', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
+        this.add.text(centro - 220, 250, 'IP o URL del túnel', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
         this.campoServidor = crearCampo(this, centro, 300, {
             ejemplo: '192.168.1.100',
             largoMaximo: 200,
@@ -70,7 +69,7 @@ export class EscenaServidor extends Scene {
                 color: COLOR.CELESTE,
                 alPulsar: () => this.escanearQr(),
             })] : []),
-            new Boton(this, centro, esAndroid ? 620 : 580, 'PROBAR Y GUARDAR', {
+            new Boton(this, centro, esAndroid ? 620 : 580, 'GUARDAR SERVIDOR', {
                 ancho: 360,
                 color: COLOR.PACMAN,
                 alPulsar: () => this.guardar(),
@@ -138,29 +137,16 @@ export class EscenaServidor extends Scene {
         const url = normalizarUrlApi(this.campoServidor.value);
 
         if (!url) {
-            this.aviso.error('Escribe la IP de la PC, por ejemplo 192.168.1.100');
+            this.aviso.error('Escribe una IP o la URL HTTPS del túnel.');
             return;
         }
 
         this.campoServidor.value = sinEsquema(url);
-        this.setOcupado(true, `Probando ${url}...`);
-
-        const respuesta = await probarServidor(url);
-
-        if (!this.sys.isActive()) {
-            return;
-        }
-
-        if (!respuesta.success) {
-            this.setOcupado(false);
-            this.aviso.error(`${respuesta.error}\nRevisa la IP y que PacmanApi esté encendido.`);
-            return;
-        }
-
+        this.setOcupado(true, 'Guardando servidor...');
         await this.cambiarServidor(url === URL_API_PREDETERMINADA ? null : url, 'Servidor guardado.');
     }
 
-    // Sin probarla: debe poder volverse a la predeterminada aunque no responda
+    // La dirección predeterminada se restaura aunque la API esté apagada.
     private async restablecer(): Promise<void> {
         if (this.ocupado) {
             return;

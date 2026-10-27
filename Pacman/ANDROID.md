@@ -27,11 +27,11 @@ Pacman/android/app/build/outputs/apk/debug/app-debug.apk
 
 No se incluyen contraseñas de SQL ni del correo en el APK.
 
-La dirección que se indica al compilar es solo la predeterminada. Si cambian de red o de PC no hace falta otro APK. Con `PacmanApi` iniciado con el perfil **red-local**, se abren Swagger y la página del QR en el navegador de la PC. Si la segunda pestaña no aparece, abre `http://localhost:5253/conectar`. En la app toca **SERVIDOR → ESCANEAR QR** y concede permiso de cámara. La app comprueba que la API y la base respondan, guarda la dirección y vuelve al inicio de sesión. Elige el QR de la red local o el del túnel según cómo se conectará el celular.
+La dirección que se indica al compilar es solo la predeterminada. Si cambian de red o de PC no hace falta otro APK. Con `PacmanApi` iniciado con el perfil **red-local**, se abren Swagger y la página del QR en el navegador de la PC. Si la segunda pestaña no aparece, abre `http://localhost:5253/conectar`. En la app toca **SERVIDOR → ESCANEAR QR** y concede permiso de cámara. La app guarda la dirección y vuelve al inicio de sesión; allí se comprueba la conexión cuando se usa la cuenta. Elige el QR de la red local o el del túnel según cómo se conectará el celular.
 
-También puedes escribir la IP en **SERVIDOR** (por ejemplo `192.168.1.100`; el puerto 5253 se agrega solo) y pulsar **PROBAR Y GUARDAR**. Esta opción funciona si la cámara no está disponible. **PREDETERMINADA** vuelve a la dirección incluida al compilar. La compilación del navegador conserva su configuración habitual.
+También puedes escribir la IP en **SERVIDOR** (por ejemplo `192.168.1.100`; el puerto 5253 se agrega solo) y pulsar **GUARDAR SERVIDOR**. Esta opción funciona si la cámara no está disponible. Guardar una dirección no garantiza que la API esté encendida; si no responde, el inicio de sesión mostrará el error de conexión. **PREDETERMINADA** vuelve a la dirección incluida al compilar. La compilación del navegador conserva su configuración habitual.
 
-Si aparece **Verificando sesión...** al abrir una APK 1.0.5 o posterior, la comprobación termina en unos seis segundos cuando la API no responde. El botón **SERVIDOR** se puede pulsar durante la espera para escanear otro QR. La dirección guardada en una instalación anterior tiene prioridad sobre la predeterminada de la APK nueva; usa **PREDETERMINADA** o **PROBAR Y GUARDAR** si cambió la IP.
+Si aparece **Verificando sesión...** al abrir una APK 1.0.5 o posterior, la comprobación termina en unos seis segundos cuando la API no responde. El botón **SERVIDOR** se puede pulsar durante la espera para escanear otro QR. La dirección guardada en una instalación anterior tiene prioridad sobre la predeterminada de la APK nueva; usa **PREDETERMINADA** o **GUARDAR SERVIDOR** si cambió la IP.
 
 ## Conexión desde cualquier red con Dev Tunnels
 
@@ -40,7 +40,7 @@ Visual Studio puede dar a `PacmanApi` una dirección HTTPS estable para que los 
 1. Inicia sesión en Visual Studio. En el menú de depuración, entra a **Dev Tunnels → Crear un túnel**.
 2. Elige **Persistente** y, para que la APK pueda conectarse sin una cuenta de Microsoft, **Público**. Activa ese túnel en el mismo menú.
 3. Inicia o reinicia `PacmanApi` con el perfil **red-local**. La página `http://localhost:5253/conectar` mostrará primero la tarjeta **Internet: túnel de Visual Studio**.
-4. En la APK 1.0.4 o posterior, toca **SERVIDOR → ESCANEAR QR** y lee esa tarjeta. La dirección queda guardada en el celular. También puedes escribir a mano la URL HTTPS del túnel y pulsar **PROBAR Y GUARDAR**.
+4. En la APK 1.0.4 o posterior, toca **SERVIDOR → ESCANEAR QR** y lee esa tarjeta. La dirección queda guardada en el celular. También puedes escribir a mano la URL HTTPS del túnel y pulsar **GUARDAR SERVIDOR** en la versión 1.0.6 o posterior.
 
 La PC, Visual Studio, `PacmanApi` y SQL Server deben seguir activos durante la partida. Un túnel público permite que otras personas lleguen a la API por Internet; úsalo solo para las pruebas del equipo y desactívalo al terminar. Si todos juegan en la misma Wi-Fi, la tarjeta de red local evita el recorrido por Internet.
 
