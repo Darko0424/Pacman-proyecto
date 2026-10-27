@@ -390,8 +390,9 @@ npm run android:apk -- -ServidorApi http://IP-DE-TU-PC:5253
 
 El APK queda en `Pacman/descargas/PacmanMultijugador-debug.apk`. Para probarlo,
 iniciar `PacmanApi` con el perfil `red-local`, abrir `http://localhost:5253/conectar`
-en la PC y escanear el QR desde **SERVIDOR** en la app. Los celulares deben estar en la misma
-red Wi-Fi que la PC. La API de C# y SQL Server siguen funcionando en la PC.
+en la PC y escanear el QR desde **SERVIDOR** en la app. El QR de red local requiere
+la misma Wi-Fi; un Dev Tunnel persistente de Visual Studio permite usar otras redes.
+La API de C# y SQL Server siguen funcionando en la PC.
 
 Consultar [la guía de Android](Pacman/ANDROID.md) para requisitos, instalación y
 conexión. La dirección de la red y los APK generados quedan fuera de Git.

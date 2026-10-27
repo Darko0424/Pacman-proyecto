@@ -188,7 +188,7 @@ try
     Write-Host ''
     Write-Host 'APK generado correctamente:' -ForegroundColor Green
     Write-Host $rutaApkEntregado
-    Write-Host 'Inicia PacmanApi con el perfil red-local y conecta el celular a la misma red Wi-Fi.'
+    Write-Host 'Inicia PacmanApi con el perfil red-local y escanea el QR de red local o del túnel de Visual Studio.'
 }
 finally
 {

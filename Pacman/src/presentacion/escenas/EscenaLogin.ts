@@ -17,7 +17,7 @@ import { crearPanel } from '../ui/Panel';
 import { DatosVerificacion } from './EscenaVerificacion';
 import { Aviso, continuarConSesion, dibujarPantallaSesion } from './FlujoSesion';
 
-const AYUDA_SIN_CONEXION = 'No se pudo conectar con el servidor.\nRevisa la IP de la PC en SERVIDOR.';
+const AYUDA_SIN_CONEXION = 'No se pudo conectar con el servidor.\nRevisa SERVIDOR y que la API esté encendida.';
 
 export class EscenaLogin extends Scene {
     private campoUsuario: HTMLInputElement;
@@ -173,7 +173,8 @@ export class EscenaLogin extends Scene {
         this.ocupado = ocupado;
         this.botonEntrar.setHabilitado(!ocupado);
         this.botonCrear.setHabilitado(!ocupado);
-        this.botonServidor.setHabilitado(!ocupado);
+        // El jugador debe poder corregir la dirección incluso si la red no responde.
+        this.botonServidor.setHabilitado(true);
         habilitarCampos([this.campoUsuario, this.campoContrasena], !ocupado);
         this.aviso.info(texto);
     }

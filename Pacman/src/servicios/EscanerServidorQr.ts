@@ -24,10 +24,13 @@ export function leerUrlServidorQr(contenido: string): string | null {
         }
 
         const direccion = new URL(urlApi);
+        const esServidorLocal = direccion.protocol === 'http:' &&
+            direccion.port === String(PUERTO_API);
+        const esTunelDeVisualStudio = direccion.protocol === 'https:' &&
+            direccion.hostname.endsWith('.devtunnels.ms') &&
+            !direccion.port;
 
-        return direccion.protocol === 'http:' && direccion.port === String(PUERTO_API)
-            ? urlApi
-            : null;
+        return esServidorLocal || esTunelDeVisualStudio ? urlApi : null;
     } catch {
         return null;
     }

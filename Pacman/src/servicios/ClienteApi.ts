@@ -67,9 +67,16 @@ export function actualizarUsuarioSesion(usuario: TUsuario): void{
 
 // Todas las respuestas de la API son Respuesta<T>, también los BadRequest.
 // Los fallos de red se devuelven con la misma forma para tratarlos igual.
-async function solicitar<T>(metodo: 'GET' | 'POST', ruta: string, cuerpo?: unknown): Promise<IRespuesta<T>> {
+async function solicitar<T>(
+    metodo: 'GET' | 'POST',
+    ruta: string,
+    cuerpo?: unknown,
+    tiempoMaximoMs?: number,
+): Promise<IRespuesta<T>> {
     const encabezados: Record<string, string> = {};
     const token = obtenerToken();
+    const cancelar = tiempoMaximoMs === undefined ? null : new AbortController();
+    const espera = cancelar === null ? null : setTimeout(() => cancelar.abort(), tiempoMaximoMs);
 
     if (token) {
         encabezados.Authorization = `Bearer ${token}`;
@@ -84,11 +91,16 @@ async function solicitar<T>(metodo: 'GET' | 'POST', ruta: string, cuerpo?: unkno
             method: metodo,
             headers: encabezados,
             body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+            signal: cancelar?.signal,
         });
 
         return (await respuesta.json()) as IRespuesta<T>;
     } catch {
         return { success: false, data: null, error: ERROR_SIN_CONEXION };
+    } finally {
+        if (espera !== null) {
+            clearTimeout(espera);
+        }
     }
 }
 
@@ -121,7 +133,7 @@ export function iniciarSesion(usuario: string, contrasena: string): Promise<IRes
 
 // Comprueba que el token guardado siga vigente y devuelve su usuario
 export function validarSesion(): Promise<IRespuesta<TUsuario>> {
-    return solicitar<TUsuario>('GET', 'api/Usuario/Sesion');
+    return solicitar<TUsuario>('GET', 'api/Usuario/Sesion', undefined, 6000);
 }
 
 export function listarDificultades(): Promise<IRespuesta<TDificultad[]>> {

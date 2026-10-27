@@ -53,7 +53,7 @@ export class EscenaServidor extends Scene {
 
         this.add
             .text(centro, 375,
-                'PC y celular en la misma red.\nEn la PC abre:\nhttp://localhost:5253/conectar',
+                'Usa la red local o un túnel de Visual Studio.\nEn la PC abre:\nhttp://localhost:5253/conectar',
                 estiloTexto(10, COLOR.GRIS_CLARO))
             .setOrigin(0.5)
             .setAlign('center')
