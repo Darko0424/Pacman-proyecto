@@ -17,6 +17,8 @@ export const CASILLA_BASE = 24;
 
 // Mapa del nivel: muros, bolas y cajas. Las coordenadas que recibe son casillas
 // (fila, columna), con decimales cuando un personaje va entre dos.
+// Las casillas pueden ser más anchas que altas para llenar pantallas anchas;
+// los sprites usan el lado menor (tamano) para no deformarse.
 export class VistaLaberinto {
     private readonly capa: GameObjects.Container;
     private readonly puntos = new Map<number, GameObjects.Image>();
@@ -29,7 +31,8 @@ export class VistaLaberinto {
         private readonly nivel: NivelDto,
         private readonly x: number,
         private readonly y: number,
-        readonly tamano: number,
+        private readonly anchoCasilla: number,
+        private readonly altoCasilla: number,
     ) {
         this.capa = escena.add.container(0, 0);
 
@@ -37,19 +40,24 @@ export class VistaLaberinto {
         this.dibujarPuntos();
     }
 
+    // Lado con el que se escalan los sprites
+    get tamano(): number {
+        return Math.min(this.anchoCasilla, this.altoCasilla);
+    }
+
     get ancho(): number {
-        return this.nivel.columnas * this.tamano;
+        return this.nivel.columnas * this.anchoCasilla;
     }
 
     get alto(): number {
-        return this.nivel.filas * this.tamano;
+        return this.nivel.filas * this.altoCasilla;
     }
 
     // Centro en pantalla de una casilla
     centro(fila: number, columna: number): { x: number; y: number } {
         return {
-            x: this.x + (columna + 0.5) * this.tamano,
-            y: this.y + (fila + 0.5) * this.tamano,
+            x: this.x + (columna + 0.5) * this.anchoCasilla,
+            y: this.y + (fila + 0.5) * this.altoCasilla,
         };
     }
 
@@ -140,7 +148,8 @@ export class VistaLaberinto {
     // Las esquinas solo se rellenan si los tres vecinos de ese lado son muro,
     // así los rincones hacia el pasillo quedan recortados.
     private pintarForma(grafico: GameObjects.Graphics, hueco: number, color: number): void {
-        const t = this.tamano;
+        const w = this.anchoCasilla;
+        const h = this.altoCasilla;
         const radio = Math.max(2, hueco);
 
         grafico.fillStyle(color);
@@ -151,29 +160,29 @@ export class VistaLaberinto {
                     continue;
                 }
 
-                const x = this.x + columna * t;
-                const y = this.y + fila * t;
+                const x = this.x + columna * w;
+                const y = this.y + fila * h;
                 const arriba = this.esMuro(fila - 1, columna);
                 const abajo = this.esMuro(fila + 1, columna);
                 const izquierda = this.esMuro(fila, columna - 1);
                 const derecha = this.esMuro(fila, columna + 1);
 
-                grafico.fillRoundedRect(x + hueco, y + hueco, t - 2 * hueco, t - 2 * hueco, {
+                grafico.fillRoundedRect(x + hueco, y + hueco, w - 2 * hueco, h - 2 * hueco, {
                     tl: !arriba && !izquierda ? radio : 0,
                     tr: !arriba && !derecha ? radio : 0,
                     bl: !abajo && !izquierda ? radio : 0,
                     br: !abajo && !derecha ? radio : 0,
                 });
 
-                if (arriba) grafico.fillRect(x + hueco, y, t - 2 * hueco, hueco);
-                if (abajo) grafico.fillRect(x + hueco, y + t - hueco, t - 2 * hueco, hueco);
-                if (izquierda) grafico.fillRect(x, y + hueco, hueco, t - 2 * hueco);
-                if (derecha) grafico.fillRect(x + t - hueco, y + hueco, hueco, t - 2 * hueco);
+                if (arriba) grafico.fillRect(x + hueco, y, w - 2 * hueco, hueco);
+                if (abajo) grafico.fillRect(x + hueco, y + h - hueco, w - 2 * hueco, hueco);
+                if (izquierda) grafico.fillRect(x, y + hueco, hueco, h - 2 * hueco);
+                if (derecha) grafico.fillRect(x + w - hueco, y + hueco, hueco, h - 2 * hueco);
 
                 if (arriba && izquierda && this.esMuro(fila - 1, columna - 1)) grafico.fillRect(x, y, hueco, hueco);
-                if (arriba && derecha && this.esMuro(fila - 1, columna + 1)) grafico.fillRect(x + t - hueco, y, hueco, hueco);
-                if (abajo && izquierda && this.esMuro(fila + 1, columna - 1)) grafico.fillRect(x, y + t - hueco, hueco, hueco);
-                if (abajo && derecha && this.esMuro(fila + 1, columna + 1)) grafico.fillRect(x + t - hueco, y + t - hueco, hueco, hueco);
+                if (arriba && derecha && this.esMuro(fila - 1, columna + 1)) grafico.fillRect(x + w - hueco, y, hueco, hueco);
+                if (abajo && izquierda && this.esMuro(fila + 1, columna - 1)) grafico.fillRect(x, y + h - hueco, hueco, hueco);
+                if (abajo && derecha && this.esMuro(fila + 1, columna + 1)) grafico.fillRect(x + w - hueco, y + h - hueco, hueco, hueco);
             }
         }
     }

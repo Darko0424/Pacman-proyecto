@@ -107,9 +107,9 @@ public static class PaginaConexionLocal
             </head>
             <body>
                 <h1>Conectar Pac-Man</h1>
-                <p class="ayuda">En el inicio de sesión del juego, toca SERVIDOR y luego ESCANEAR QR.
-                Para jugar desde distintas redes, escanea el túnel. Si todos comparten Wi-Fi,
-                escanea la tarjeta de la red local.</p>
+                <p class="ayuda">En el inicio de sesión del juego, toca SERVIDOR.
+                Para jugar desde distintas redes, toca ESCANEAR QR y escanea el túnel.
+                Si todos comparten Wi-Fi, escribe la IP de la red local y pulsa PROBAR Y GUARDAR.</p>
             """);
 
         var urlTunel = ObtenerUrlTunel();
@@ -127,7 +127,7 @@ public static class PaginaConexionLocal
         if (urlTunel is not null)
         {
             AgregarTarjeta(pagina, "Internet: túnel de Visual Studio", urlTunel,
-                "La PC debe seguir ejecutando PacmanApi.");
+                "La PC debe seguir ejecutando PacmanApi.", conQr: true);
         }
 
         var direcciones = ObtenerDireccionesLocales();
@@ -136,7 +136,7 @@ public static class PaginaConexionLocal
         {
             var urlApi = $"http://{direccion}:5253";
             AgregarTarjeta(pagina, $"Red local: {nombre}", urlApi,
-                "La PC y el celular deben estar en la misma red.");
+                "La PC y el celular deben estar en la misma red.", conQr: false);
         }
 
         if (urlTunel is null && direcciones.Count == 0)
@@ -155,23 +155,31 @@ public static class PaginaConexionLocal
         return pagina.ToString();
     }
 
+    // Solo el túnel lleva QR; la IP de la red local se escribe a mano en el juego
     private static void AgregarTarjeta(StringBuilder pagina, string nombre, string urlApi,
-        string explicacion)
+        string explicacion, bool conQr)
     {
-        var enlaceQr = $"pacman://servidor?url={Uri.EscapeDataString(urlApi)}";
-        var imagen = PngByteQRCodeHelper.GetQRCode(
-            enlaceQr,
-            QRCodeGenerator.ECCLevel.Q,
-            8
-        );
-
         pagina.Append("<section class=\"tarjeta\"><h2>")
             .Append(WebUtility.HtmlEncode(nombre))
             .Append("</h2><p>")
             .Append(WebUtility.HtmlEncode(explicacion))
-            .Append("</p><img alt=\"QR del servidor\" src=\"data:image/png;base64,")
-            .Append(Convert.ToBase64String(imagen))
-            .Append("\"><p>Dirección para escribirla a mano:<br><code>")
+            .Append("</p>");
+
+        if (conQr)
+        {
+            var enlaceQr = $"pacman://servidor?url={Uri.EscapeDataString(urlApi)}";
+            var imagen = PngByteQRCodeHelper.GetQRCode(
+                enlaceQr,
+                QRCodeGenerator.ECCLevel.Q,
+                8
+            );
+
+            pagina.Append("<img alt=\"QR del servidor\" src=\"data:image/png;base64,")
+                .Append(Convert.ToBase64String(imagen))
+                .Append("\">");
+        }
+
+        pagina.Append("<p>Dirección para escribirla a mano:<br><code>")
             .Append(WebUtility.HtmlEncode(urlApi))
             .Append("</code></p></section>");
     }

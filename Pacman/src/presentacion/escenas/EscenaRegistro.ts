@@ -13,6 +13,39 @@ const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LARGO_MAXIMO_CORREO = 100;
 const LARGO_MINIMO_CONTRASENA = 8;
 const LARGO_MAXIMO_CONTRASENA = 128;
+const LARGO_MINIMO_USUARIO_CORREO = 3;
+const REQUISITOS_CONTRASENA =
+    `Mínimo ${LARGO_MINIMO_CONTRASENA} caracteres, con mayúscula, minúscula, número y símbolo.`;
+
+// Mismas reglas que UsuarioLN.ValidarContrasena en la API
+function validarContrasena(contrasena: string, usuarioCorreo: string): string | null {
+    if (contrasena.length < LARGO_MINIMO_CONTRASENA || contrasena.length > LARGO_MAXIMO_CONTRASENA) {
+        return `La contraseña debe tener entre ${LARGO_MINIMO_CONTRASENA} y ${LARGO_MAXIMO_CONTRASENA} caracteres.`;
+    }
+
+    if (/\s/u.test(contrasena)) {
+        return 'La contraseña no puede tener espacios.';
+    }
+
+    if (!/\p{Lu}/u.test(contrasena) || !/\p{Ll}/u.test(contrasena)) {
+        return 'La contraseña debe tener al menos una mayúscula y una minúscula.';
+    }
+
+    if (!/\p{Nd}/u.test(contrasena)) {
+        return 'La contraseña debe tener al menos un número.';
+    }
+
+    if (!/[^\p{L}\p{N}]/u.test(contrasena)) {
+        return 'La contraseña debe tener al menos un símbolo (por ejemplo ! # $ . _).';
+    }
+
+    if (usuarioCorreo.length >= LARGO_MINIMO_USUARIO_CORREO &&
+        contrasena.toLowerCase().includes(usuarioCorreo.toLowerCase())) {
+        return 'La contraseña no puede contener tu correo.';
+    }
+
+    return null;
+}
 
 export class EscenaRegistro extends Scene {
     private campoCorreo: HTMLInputElement;
@@ -47,7 +80,7 @@ export class EscenaRegistro extends Scene {
         this.add.text(centro - 220, 330, 'Contraseña', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
         this.campoContrasena = crearCampo(this, centro, 375, {
             tipo: 'password',
-            ejemplo: 'Mínimo 8 caracteres',
+            ejemplo: 'Ej. Pacman#2026',
             autocompletar: 'new-password',
             largoMaximo: LARGO_MAXIMO_CONTRASENA,
             alEnter: () => this.campoConfirmar.focus(),
@@ -63,6 +96,7 @@ export class EscenaRegistro extends Scene {
         });
 
         this.aviso = new Aviso(this, 545);
+        this.aviso.info(REQUISITOS_CONTRASENA);
 
         this.botonCrear = new Boton(this, centro, 610, 'CREAR CUENTA', {
             ancho: 300,
@@ -125,8 +159,10 @@ export class EscenaRegistro extends Scene {
             return 'El correo no es válido.';
         }
 
-        if (contrasena.length < LARGO_MINIMO_CONTRASENA || contrasena.length > LARGO_MAXIMO_CONTRASENA) {
-            return `La contraseña debe tener entre ${LARGO_MINIMO_CONTRASENA} y ${LARGO_MAXIMO_CONTRASENA} caracteres.`;
+        const errorContrasena = validarContrasena(contrasena, correo.split('@')[0]);
+
+        if (errorContrasena) {
+            return errorContrasena;
         }
 
         if (contrasena !== confirmacion) {

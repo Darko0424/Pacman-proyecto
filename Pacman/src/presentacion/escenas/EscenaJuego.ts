@@ -26,6 +26,9 @@ const NIVELES_POR_DEFECTO = 5;
 // ReglasJuego.DuracionTransicion
 const SEGUNDOS_TRANSICION = 5;
 
+// Cuánto más ancha que alta puede ser una casilla (1 = cuadradas)
+const ESTIRAMIENTO_MAXIMO = 1.4;
+
 const TECLAS: Record<string, Direccion> = {
     ArrowUp: Direccion.Arriba,
     KeyW: Direccion.Arriba,
@@ -372,9 +375,12 @@ export class EscenaJuego extends Scene {
         this.laberinto?.destruir();
         const zona = this.distribucion.mapa;
         const tamano = Math.floor(Math.min(zona.ancho / nivel.columnas, zona.alto / nivel.filas));
-        const x = zona.x + (zona.ancho - nivel.columnas * tamano) / 2;
+        // En pantallas anchas el alto limita el tamaño: las casillas se ensanchan
+        // para no dejar franjas vacías a los lados del laberinto
+        const anchoCasilla = Math.floor(Math.min(zona.ancho / nivel.columnas, tamano * ESTIRAMIENTO_MAXIMO));
+        const x = zona.x + (zona.ancho - nivel.columnas * anchoCasilla) / 2;
         const y = zona.y + (zona.alto - nivel.filas * tamano) / 2;
-        this.laberinto = new VistaLaberinto(this, nivel, x, y, tamano);
+        this.laberinto = new VistaLaberinto(this, nivel, x, y, anchoCasilla, tamano);
         this.laberinto.actualizarPuntos(this.estado.estado?.puntosConsumidos ?? []);
     }
 

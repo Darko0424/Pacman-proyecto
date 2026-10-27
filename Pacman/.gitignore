@@ -26,3 +26,6 @@ dist-ssr
 
 # APK de prueba y reporte local
 /descargas/
+
+# Paquetes del APK para compartir
+/descargas.zip

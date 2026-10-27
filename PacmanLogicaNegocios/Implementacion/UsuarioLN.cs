@@ -27,6 +27,8 @@ namespace PacmanLogicaNegocios.Implementacion
         private const int LargoMaximoCorreo = 100;
         private const int LargoMinimoContrasena = 8;
         private const int LargoMaximoContrasena = 128;
+        // Una parte del correo más corta que esto no se busca dentro de la contraseña
+        private const int LargoMinimoUsuarioCorreo = 3;
 
         private const int MinutosVigenciaCodigo = 15;
         private const int SegundosEsperaReenvio = 60;
@@ -846,10 +848,43 @@ namespace PacmanLogicaNegocios.Implementacion
                 return "El correo electrónico no es válido.";
             }
 
+            return ValidarContrasena(contrasena, direccion.User);
+        }
+
+        // Las mismas reglas revisa EscenaRegistro en el front, para avisar antes de enviar
+        private static string? ValidarContrasena(string contrasena, string usuarioCorreo)
+        {
             if (contrasena.Length < LargoMinimoContrasena ||
                 contrasena.Length > LargoMaximoContrasena)
             {
                 return $"La contraseña debe tener entre {LargoMinimoContrasena} y {LargoMaximoContrasena} caracteres.";
+            }
+
+            if (contrasena.Any(char.IsWhiteSpace))
+            {
+                return "La contraseña no puede tener espacios.";
+            }
+
+            if (!contrasena.Any(char.IsUpper) || !contrasena.Any(char.IsLower))
+            {
+                return "La contraseña debe tener al menos una mayúscula y una minúscula.";
+            }
+
+            if (!contrasena.Any(char.IsDigit))
+            {
+                return "La contraseña debe tener al menos un número.";
+            }
+
+            if (contrasena.All(char.IsLetterOrDigit))
+            {
+                return "La contraseña debe tener al menos un símbolo (por ejemplo ! # $ . _).";
+            }
+
+            // Lo primero que alguien probaría al conocer el correo
+            if (usuarioCorreo.Length >= LargoMinimoUsuarioCorreo &&
+                contrasena.Contains(usuarioCorreo, StringComparison.OrdinalIgnoreCase))
+            {
+                return "La contraseña no puede contener tu correo.";
             }
 
             return null;
