@@ -19,4 +19,7 @@ public interface INotificadorJuego
     Task NotificarSesionReemplazadaAsync(string idConexion, string codigoSala);
 
     Task NotificarSesionCerradaAsync(int idUsuario);
+
+    // Saca al expulsado del grupo de la sala y le avisa
+    Task NotificarExpulsionAsync(string idConexion, string codigoSala);
 }

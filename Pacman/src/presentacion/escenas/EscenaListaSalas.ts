@@ -46,9 +46,14 @@ export class EscenaListaSalas extends Scene {
     private botonActualizar: Boton;
     private temporizador: Time.TimerEvent | null = null;
     private ocupado = false;
+    private aviso = '';
 
     constructor() {
         super('EscenaListaSalas');
+    }
+
+    init(datos?: { aviso?: string }): void {
+        this.aviso = datos?.aviso ?? '';
     }
 
     create(): void {
@@ -63,6 +68,8 @@ export class EscenaListaSalas extends Scene {
 
         this.filas = this.add.container(0, 0);
         this.mensaje = this.add.text(width / 2, 622, '', estiloTexto(12, COLOR.ROSA)).setOrigin(0.5);
+        this.mostrarError(this.aviso);
+
 
         new Boton(this, 230, 680, 'VOLVER', {
             ancho: 220,
@@ -279,15 +286,18 @@ export class EscenaListaSalas extends Scene {
                 alPulsar: () => this.unirse(sala.codigo),
             }));
         } else {
-            const motivo = sala.estado === EstadoSala.Lobby ? 'LLENA' : 'EN CURSO';
+            const motivo = sala.estado !== EstadoSala.Lobby
+                ? 'EN CURSO'
+                : sala.bloqueada ? 'BLOQUEADA' : 'LLENA';
             fila.add(this.add.text(ANCHO_FILA - 100, centro, motivo, estiloTexto(12, COLOR.GRIS)).setOrigin(0.5));
         }
 
         return fila;
     }
 
-    private admiteIngreso(sala: SalaDto): boolean {
-        return sala.estado === EstadoSala.Lobby && sala.jugadores.length < sala.capacidadHumanos;
+        private admiteIngreso(sala: SalaDto): boolean {
+        return sala.estado === EstadoSala.Lobby && !sala.bloqueada &&
+            sala.jugadores.length < sala.capacidadHumanos;
     }
 
     private mostrarVacio(titulo: string, subtitulo = ''): void {

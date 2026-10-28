@@ -162,6 +162,16 @@ public sealed class GestorSalas : IGestorSalas, IAsyncDisposable, IDisposable
             ValidarIngreso(idUsuario, nombreUsuario, idConexion);
             VerificarSinInicioPendiente(contexto);
 
+            if (contexto.Sala.Bloqueada)
+            {
+                return Task.FromResult(Respuesta<SalaDto>.Fail("La sala está bloqueada por el anfitrión."));
+            }
+
+            if (contexto.Sala.FueExpulsado(idUsuario))
+            {
+                return Task.FromResult(Respuesta<SalaDto>.Fail("El anfitrión te expulsó de esta sala."));
+            }
+
             lock (_indices)
             {
                 VerificarDisponible();
@@ -321,6 +331,50 @@ public sealed class GestorSalas : IGestorSalas, IAsyncDisposable, IDisposable
             }
 
             contexto.SalaPendiente = true;
+            return Respuesta<SalaDto>.Ok(SalaDto.Crear(contexto.Sala));
+        }, notificar: true);
+    }
+
+    public Task<Respuesta<SalaDto>> BloquearAsync(string codigoSala, int idUsuario, bool bloqueada)
+    {
+        return EjecutarEnSalaAsync(codigoSala, contexto =>
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idUsuario);
+            VerificarSinInicioPendiente(contexto);
+
+            if (!contexto.Sala.Bloquear(idUsuario, bloqueada))
+            {
+                return Task.FromResult(Respuesta<SalaDto>.Fail("Solo el anfitrión puede bloquear la sala en el lobby."));
+            }
+
+            contexto.SalaPendiente = true;
+            return Task.FromResult(Respuesta<SalaDto>.Ok(SalaDto.Crear(contexto.Sala)));
+        }, notificar: true);
+    }
+
+    public Task<Respuesta<SalaDto>> ExpulsarAsync(string codigoSala, int idAnfitrion, int idExpulsado)
+    {
+        return EjecutarEnSalaAsync(codigoSala, async contexto =>
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(idAnfitrion);
+            VerificarSinInicioPendiente(contexto);
+            var jugador = contexto.Sala.Jugadores.FirstOrDefault(actual => actual.IdUsuario == idExpulsado);
+
+            if (jugador == null || !contexto.Sala.Expulsar(idAnfitrion, idExpulsado))
+            {
+                return Respuesta<SalaDto>.Fail("Solo el anfitrión puede expulsar a otro jugador en el lobby.");
+            }
+
+            lock (_indices)
+            {
+                _usuarios.Remove(idExpulsado);
+                _conexiones.Remove(jugador.IdConexion);
+            }
+
+            await IntentarNotificarAsync(() =>
+                _notificador.NotificarExpulsionAsync(jugador.IdConexion, contexto.Sala.Codigo));
+
+            MarcarCambioDeSala(contexto);
             return Respuesta<SalaDto>.Ok(SalaDto.Crear(contexto.Sala));
         }, notificar: true);
     }
@@ -1023,6 +1077,7 @@ public sealed class GestorSalas : IGestorSalas, IAsyncDisposable, IDisposable
         }
 
         copia.Configurar(copia.IdAnfitrion!.Value, original.Configuracion);
+        copia.Bloquear(copia.IdAnfitrion!.Value, original.Bloqueada);
         return copia;
     }
 

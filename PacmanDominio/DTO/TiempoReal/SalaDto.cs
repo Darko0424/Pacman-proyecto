@@ -13,6 +13,7 @@ public sealed class SalaDto
     public int NumeroNivel { get; init; }
     public int CantidadNiveles { get; init; }
     public bool PuedeIniciar { get; init; }
+    public bool Bloqueada { get; init; }
     public int CapacidadHumanos { get; init; }
     public ConfiguracionSalaDto Configuracion { get; init; } = new();
     public IReadOnlyList<JugadorSalaDto> Jugadores { get; init; } = Array.Empty<JugadorSalaDto>();
@@ -40,6 +41,7 @@ public sealed class SalaDto
             NumeroNivel = sala.NumeroNivel,
             CantidadNiveles = ConfiguracionPartida.CantidadNiveles,
             PuedeIniciar = sala.PuedeIniciar,
+            Bloqueada = sala.Bloqueada,
             CapacidadHumanos = ConfiguracionPartida.CantidadMaximaHumanos,
             Configuracion = ConfiguracionSalaDto.Crear(sala.Configuracion),
             Jugadores = jugadores

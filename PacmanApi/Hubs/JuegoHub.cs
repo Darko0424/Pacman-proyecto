@@ -22,6 +22,7 @@ public sealed class JuegoHub : Hub
     public const string NivelIniciado = "NivelIniciado";
     public const string EstadoActualizado = "EstadoActualizado";
     public const string SesionReemplazada = "SesionReemplazada";
+    public const string Expulsado = "Expulsado";
 
     private readonly IGestorSalas _gestor;
 
@@ -134,6 +135,18 @@ public sealed class JuegoHub : Hub
     public Task<Respuesta<SalaDto>> ElegirRol(string codigoSala, string? rol)
     {
         return _gestor.ElegirRolAsync(codigoSala, IdUsuario, rol);
+    }
+
+    // Solo el anfitrión, en el lobby
+    public Task<Respuesta<SalaDto>> BloquearSala(string codigoSala, bool bloqueada)
+    {
+        return _gestor.BloquearAsync(codigoSala, IdUsuario, bloqueada);
+    }
+
+    // Solo el anfitrión, en el lobby
+    public Task<Respuesta<SalaDto>> ExpulsarJugador(string codigoSala, int idJugador)
+    {
+        return _gestor.ExpulsarAsync(codigoSala, IdUsuario, idJugador);
     }
 
     // Solo el anfitrión

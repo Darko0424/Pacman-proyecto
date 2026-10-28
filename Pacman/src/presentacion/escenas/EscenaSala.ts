@@ -71,6 +71,8 @@ interface Plaza {
     nombre: GameObjects.Text;
     etiquetas: GameObjects.Text;
     esperando: GameObjects.Text;
+    expulsar: Boton;
+    idJugador: number | null;
 }
 
 interface DatosEscenaSala {
@@ -90,6 +92,8 @@ export class EscenaSala extends Scene {
     private mensaje: GameObjects.Text;
     private espera: GameObjects.Text;
     private botonIniciar: Boton;
+    private botonBloquear: Boton;
+
 
     private selectorDificultad: Selector<number> | null = null;
     private selectorVidas: Selector<number> | null = null;
@@ -138,6 +142,13 @@ export class EscenaSala extends Scene {
             alPulsar: () => this.iniciar(),
         });
 
+                this.botonBloquear = new Boton(this, 467, 680, 'BLOQUEAR', {
+            ancho: 200,
+            tamanoTexto: 12,
+            color: COLOR.NARANJA,
+            alPulsar: () => this.bloquear(),
+        });
+
         this.espera = this.add
             .text(width - 250, 680, 'ESPERANDO AL ANFITRION', estiloTexto(12, COLOR.GRIS_CLARO))
             .setOrigin(0.5);
@@ -151,10 +162,17 @@ export class EscenaSala extends Scene {
         const cancelarEstado = conexionTiempoReal.alCambiarEstado((estado) => {
             this.mostrarMensaje(estado === 'RECONECTANDO' ? 'Reconectando...' : '');
         });
+        const cancelarExpulsion = conexionTiempoReal.on('Expulsado', (codigo) => {
+            if (codigo === this.sala.codigo) {
+                this.scene.start('EscenaListaSalas', { aviso: 'El anfitrión te expulsó de la sala' });
+            }
+        });
+
 
         this.events.once('shutdown', () => {
             cancelar();
             cancelarEstado();
+            cancelarExpulsion();
         });
 
         // Volvió a una sala con la partida en curso (reconexión): directo al juego
@@ -216,6 +234,25 @@ export class EscenaSala extends Scene {
         if (this.sys.isActive()) {
             this.scene.start('EscenaListaSalas');
         }
+    }
+
+        private async bloquear(): Promise<void> {
+        this.botonBloquear.setHabilitado(false);
+        const respuesta = await conexionTiempoReal.bloquearSala(this.sala.codigo, !this.sala.bloqueada);
+
+        if (this.sys.isActive()) {
+            this.botonBloquear.setHabilitado(true);
+        }
+
+        this.tratarRespuesta(respuesta);
+    }
+
+    private async expulsar(idJugador: number | null): Promise<void> {
+        if (idJugador === null) {
+            return;
+        }
+
+        this.tratarRespuesta(await conexionTiempoReal.expulsarJugador(this.sala.codigo, idJugador));
     }
 
     // El aviso SalaActualizada trae el cambio; aquí solo se trata el rechazo
@@ -286,7 +323,15 @@ export class EscenaSala extends Scene {
                 .setOrigin(0, 0.5);
 
             this.tweens.add({ targets: esperando, alpha: 0.35, duration: 800, yoyo: true, repeat: -1, delay: i * 200 });
-            this.plazas.push({ color, fondo, insignia, numero, nombre, etiquetas, esperando });
+            const expulsar = new Boton(this, x + ancho - 60, centro, 'X', {
+                ancho: 48,
+                alto: 48,
+                tamanoTexto: 14,
+                color: COLOR.ROJO,
+                alPulsar: () => this.expulsar(this.plazas[i].idJugador),
+            });
+
+            this.plazas.push({ color, fondo, insignia, numero, nombre, etiquetas, esperando, expulsar, idJugador: null });
         }
     }
 
@@ -344,14 +389,15 @@ export class EscenaSala extends Scene {
 
         this.titulo.setText(`SALA ${sala.codigo}`);
         const configuracion = sala.configuracion;
-        this.modo.setText(solo
+         const descripcion = solo
             ? 'TU CONTRA LA IA · ELIGE TU ROL'
             : configuracion.bandosFijos
                 ? 'MULTIJUGADOR · ROLES AL AZAR SOLO AL EMPEZAR'
-                : 'MULTIJUGADOR · ROLES AL AZAR EN CADA NIVEL');
+                : 'MULTIJUGADOR · ROLES AL AZAR EN CADA NIVEL';
+        this.modo.setText(sala.bloqueada ? `${descripcion} · BLOQUEADA` : descripcion); 
         this.cabeceraJugadores.setText(`JUGADORES ${sala.jugadores.length}/${sala.capacidadHumanos}`);
 
-        this.plazas.forEach((plaza, i) => this.mostrarPlaza(plaza, sala.jugadores[i]));
+        this.plazas.forEach((plaza, i) => this.mostrarPlaza(plaza, sala.jugadores[i], editable));
 
         this.selectorDificultad?.setValor(configuracion.idDificultad).setEditable(editable);
         this.selectorVidas?.setValor(configuracion.vidas).setEditable(editable);
@@ -374,6 +420,7 @@ export class EscenaSala extends Scene {
         this.notaConfiguracion.setText(soyAnfitrion ? '' : 'SOLO EL ANFITRION LA CAMBIA');
 
         this.botonIniciar.setVisible(soyAnfitrion).setHabilitado(sala.puedeIniciar);
+        this.botonBloquear.setVisible(editable).setTexto(sala.bloqueada ? 'DESBLOQUEAR' : 'BLOQUEAR');
         this.espera.setVisible(!soyAnfitrion && enLobby);
     }
 
@@ -400,9 +447,11 @@ export class EscenaSala extends Scene {
         }
     }
 
-    private mostrarPlaza(plaza: Plaza, jugador: JugadorSalaDto | undefined): void {
+        private mostrarPlaza(plaza: Plaza, jugador: JugadorSalaDto | undefined, puedeExpulsar: boolean): void {
         const ocupada = jugador !== undefined;
 
+        plaza.idJugador = jugador?.idUsuario ?? null;
+        plaza.expulsar.setVisible(puedeExpulsar && ocupada && jugador.idUsuario !== this.idUsuario);
         plaza.insignia.dibujar(ocupada ? plaza.color : COLOR.PANEL, plaza.color, 2);
         plaza.insignia.setAlpha(ocupada ? 1 : 0.4);
         plaza.numero.setAlpha(ocupada ? 1 : 0.4);

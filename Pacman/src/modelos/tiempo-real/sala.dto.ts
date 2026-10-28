@@ -36,6 +36,8 @@ export interface SalaDto {
     numeroNivel: number;
     cantidadNiveles: number;
     puedeIniciar: boolean;
+    // El anfitrión la bloquea para que nadie más entre
+    bloqueada: boolean;   
     capacidadHumanos: number;
     configuracion: ConfiguracionSalaDto;
     // En orden de ingreso

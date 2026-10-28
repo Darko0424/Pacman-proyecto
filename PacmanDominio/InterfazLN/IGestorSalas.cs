@@ -28,6 +28,10 @@ public interface IGestorSalas
     Task<Respuesta<SalaDto>> ConfigurarAsync(
         string codigoSala, int idUsuario, ConfiguracionSalaDto configuracion);
 
+    // Solo el anfitrión, en el lobby
+    Task<Respuesta<SalaDto>> BloquearAsync(string codigoSala, int idUsuario, bool bloqueada);
+    Task<Respuesta<SalaDto>> ExpulsarAsync(string codigoSala, int idAnfitrion, int idExpulsado);
+
     // Preferencia para jugar solo contra la IA: PACMAN, FANTASMA o null (sorteo)
     Task<Respuesta<SalaDto>> ElegirRolAsync(string codigoSala, int idUsuario, string? rol);
 

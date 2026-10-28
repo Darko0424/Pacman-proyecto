@@ -18,6 +18,9 @@ public sealed class Sala
 
     private readonly List<JugadorConectado> _jugadores = new();
 
+    // Los expulsados no pueden volver a entrar a esta sala
+    private readonly HashSet<int> _expulsados = new();
+
     public string Codigo { get; }
 
     // En orden de ingreso: si el anfitrión se va, lo reemplaza el siguiente
@@ -26,6 +29,9 @@ public sealed class Sala
     public int? IdAnfitrion { get; private set; }
     public ConfiguracionSala Configuracion { get; private set; } = ConfiguracionSala.PorDefecto;
     public EstadoSala Estado { get; private set; } = EstadoSala.Lobby;
+
+    // El anfitrión la bloquea para que nadie más entre
+    public bool Bloqueada { get; private set; }
 
     // Se fija al iniciar la serie según cuántos jugadores había
     public ModoPartida? Modo { get; private set; }
@@ -101,7 +107,7 @@ public sealed class Sala
         ArgumentException.ThrowIfNullOrWhiteSpace(nombreUsuario);
         ArgumentException.ThrowIfNullOrWhiteSpace(idConexion);
 
-        if (Estado != EstadoSala.Lobby ||
+        if (Estado != EstadoSala.Lobby || Bloqueada || _expulsados.Contains(idUsuario) ||
             _jugadores.Count >= ConfiguracionPartida.CantidadMaximaHumanos)
         {
             return false;
@@ -131,6 +137,38 @@ public sealed class Sala
         Configuracion = configuracion;
 
         return true;
+    }
+
+    // Solo el anfitrión, en el lobby
+    public bool Bloquear(int idUsuario, bool bloqueada)
+    {
+        if (Estado != EstadoSala.Lobby || idUsuario != IdAnfitrion)
+        {
+            return false;
+        }
+
+        Bloqueada = bloqueada;
+
+        return true;
+    }
+
+    // Solo el anfitrión, en el lobby, y no a sí mismo
+    public bool Expulsar(int idAnfitrion, int idUsuario)
+    {
+        if (Estado != EstadoSala.Lobby || idAnfitrion != IdAnfitrion ||
+            idUsuario == idAnfitrion || BuscarJugador(idUsuario) == null)
+        {
+            return false;
+        }
+
+        _expulsados.Add(idUsuario);
+
+        return Salir(idUsuario);
+    }
+
+    public bool FueExpulsado(int idUsuario)
+    {
+        return _expulsados.Contains(idUsuario);
     }
 
     // Preferencia para jugar solo contra la IA; null = que decida el sorteo
