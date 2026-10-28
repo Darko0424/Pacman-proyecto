@@ -18,13 +18,15 @@ interface AvisosServidor {
     NivelIniciado: NivelDto;
     EstadoActualizado: EstadoPartidaDto;
     SesionReemplazada: undefined;
+    // Trae el código de la sala de la que te expulsaron
+    Expulsado: string;
 }
 
 type NombreAviso = keyof AvisosServidor;
 
 export type EstadoConexion = 'DESCONECTADO' | 'CONECTANDO' | 'CONECTADO' | 'RECONECTANDO';
 
-const AVISOS: NombreAviso[] = ['SalaActualizada', 'NivelIniciado', 'EstadoActualizado', 'SesionReemplazada'];
+const AVISOS: NombreAviso[] = ['SalaActualizada', 'NivelIniciado', 'EstadoActualizado', 'SesionReemplazada', 'Expulsado'];
 
 // Única conexión con PacmanApi/Hubs/JuegoHub. Las escenas se suscriben a los
 // avisos con on() y deben cancelar la suscripción al cerrarse (shutdown).
@@ -120,6 +122,16 @@ class ConexionTiempoReal {
     configurarSala(codigoSala: string, configuracion: ConfiguracionSalaDto): Promise<IRespuesta<SalaDto>> {
         return this.invocar('ConfigurarSala', codigoSala, configuracion);
     }
+
+    // Solo el anfitrión, en el lobby
+    bloquearSala(codigoSala: string, bloqueada: boolean): Promise<IRespuesta<SalaDto>> {
+        return this.invocar('BloquearSala', codigoSala, bloqueada);
+    }
+
+    // Solo el anfitrión, en el lobby
+    expulsarJugador(codigoSala: string, idJugador: number): Promise<IRespuesta<SalaDto>> {
+        return this.invocar('ExpulsarJugador', codigoSala, idJugador);
+    }    
 
     // Solo cuenta si juega solo contra la IA
     elegirRol(codigoSala: string, rol: CodigoRol): Promise<IRespuesta<SalaDto>> {
