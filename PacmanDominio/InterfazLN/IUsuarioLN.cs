@@ -14,4 +14,8 @@ public interface IUsuarioLN
     Task<Respuesta<bool>> ReenviarCodigoAsync(clsSolicitudCodigo datos);
     Task<Respuesta<clsSugerenciasNombre>> SugerirNombresAsync(string nombreDeseado);
     Task<Respuesta<TUsuario>> AsignarNombreAsync(string token, clsNombreUsuario datos);
+    Task<Respuesta<bool>> SolicitarRecuperacionAsync(clsSolicitudCodigo datos);
+    Task<Respuesta<clsSesionIniciada>> RestablecerContrasenaAsync(clsRestablecerContrasena datos);
+    Task<Respuesta<bool>> SolicitarCambioContrasenaAsync(string token);
+    Task<Respuesta<clsSesionIniciada>> CambiarContrasenaAsync(string token, clsCambioContrasena datos);
 }

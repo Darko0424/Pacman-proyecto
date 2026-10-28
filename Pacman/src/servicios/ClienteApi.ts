@@ -202,3 +202,28 @@ export function listarRondasHistorial(idPartida: number): Promise<IRespuesta<His
 export function obtenerProgreso(): Promise<IRespuesta<ProgresoJugador>> {
     return solicitar<ProgresoJugador>('GET', 'api/Historial/Progreso');
 }
+
+// ---------- Recuperar y cambiar contraseña ----------
+
+// Sin sesión: responde igual exista o no la cuenta
+export function solicitarRecuperacion(correoElectronico: string): Promise<IRespuesta<boolean>> {
+    return solicitar<boolean>('POST', 'api/Usuario/SolicitarRecuperacion', { correoElectronico });
+}
+
+// Devuelve la sesión iniciada: las demás sesiones de la cuenta se cierran
+export function restablecerContrasena(
+    correoElectronico: string, codigo: string, contrasenaNueva: string,
+): Promise<IRespuesta<SesionIniciada>> {
+    return solicitar<SesionIniciada>('POST', 'api/Usuario/RestablecerContrasena',
+        { correoElectronico, codigo, contrasenaNueva });
+}
+
+// Con sesión: el código va al correo de la cuenta
+export function solicitarCambioContrasena(): Promise<IRespuesta<boolean>> {
+    return solicitar<boolean>('POST', 'api/Usuario/SolicitarCambioContrasena');
+}
+
+// Devuelve una sesión NUEVA para este dispositivo: las demás se cierran
+export function cambiarContrasena(codigo: string, contrasenaNueva: string): Promise<IRespuesta<SesionIniciada>> {
+    return solicitar<SesionIniciada>('POST', 'api/Usuario/CambiarContrasena', { codigo, contrasenaNueva });
+}

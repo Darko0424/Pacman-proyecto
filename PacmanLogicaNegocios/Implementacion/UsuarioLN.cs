@@ -16,7 +16,9 @@ namespace PacmanLogicaNegocios.Implementacion
     {
         // El front revisa este código para mandar a la pantalla de verificación
         public const string CodigoCorreoNoVerificado = "CORREO_NO_VERIFICADO";
-
+        private const string PropositoVerificar = "VERIFICAR";
+        private const string PropositoRecuperar = "RECUPERAR";
+        private const string PropositoCambiar = "CAMBIAR";
         private const int FactorTrabajoHash = 12;
         private const int FactorTrabajoCodigo = 10;
         private const int TamanoToken = 32;
@@ -115,7 +117,7 @@ namespace PacmanLogicaNegocios.Implementacion
                     NombreDefinido = false
                 };
 
-                var codigo = AsignarCodigoNuevo(entidad);
+                var codigo = AsignarCodigoNuevo(entidad, PropositoVerificar);
 
                 var respuestaRepositorio =
                     await _unidadDeTrabajo.TUsuario.InsertarAsync(entidad);
@@ -194,6 +196,7 @@ namespace PacmanLogicaNegocios.Implementacion
                 }
 
                 if (usuario.CodigoVerificacionHash == null ||
+                    usuario.PropositoCodigo != PropositoVerificar ||
                     usuario.CodigoExpira < DateTime.Now)
                 {
                     resultado.Success = false;
@@ -226,6 +229,7 @@ namespace PacmanLogicaNegocios.Implementacion
                 usuario.CodigoVerificacionHash = null;
                 usuario.CodigoExpira = null;
                 usuario.IntentosCodigo = 0;
+                usuario.PropositoCodigo = null;
 
                 var respuestaRepositorio =
                     await _unidadDeTrabajo.TUsuario.ModificarAsync(usuario);
@@ -300,7 +304,7 @@ namespace PacmanLogicaNegocios.Implementacion
                     }
                 }
 
-                var codigo = AsignarCodigoNuevo(usuario);
+                var codigo = AsignarCodigoNuevo(usuario, PropositoVerificar);
 
                 var respuestaRepositorio =
                     await _unidadDeTrabajo.TUsuario.ModificarAsync(usuario);
@@ -698,7 +702,353 @@ namespace PacmanLogicaNegocios.Implementacion
             return resultado;
         }
 
+        // ---------- Recuperar y cambiar contraseña ----------
+
+        // Responde igual exista o no la cuenta, para que no sirva para averiguar
+        // qué correos están registrados
+
+        public async Task<Respuesta<bool>> SolicitarRecuperacionAsync(clsSolicitudCodigo datos)
+        {
+            var resultado = new Respuesta<bool>();
+
+            var correo = NormalizarCorreo(datos.CorreoElectronico);
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(correo))
+                {
+                    resultado.Success = false;
+                    resultado.Error = "Escribe tu correo electrónico.";
+                    return resultado;
+                }
+
+                var usuarioActual =
+                    await _unidadDeTrabajo.TUsuario.ObtenerEntidadAsync(
+                        x => x.CorreoElectronico == correo);
+
+                if (!usuarioActual.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = usuarioActual.Error;
+                    return resultado;
+                }
+
+                if (usuarioActual.Data == null)
+                {
+                    resultado.Data = true;
+                    return resultado;
+                }
+
+                return await EnviarCodigoAsync(usuarioActual.Data, PropositoRecuperar);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al pedir la recuperación de {correo}", correo);
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
+        public async Task<Respuesta<clsSesionIniciada>> RestablecerContrasenaAsync (
+            clsRestablecerContrasena datos)
+        {
+            var resultado = new Respuesta<clsSesionIniciada>();
+
+            var correo = NormalizarCorreo(datos.CorreoElectronico);
+            var contrasena = datos.ContrasenaNueva ?? string.Empty;
+
+            try
+            {
+                var errorContrasena = ValidarContrasenaNueva(contrasena);
+
+                if (errorContrasena != null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = errorContrasena;
+                    return resultado;
+                }
+
+                var usuarioActual =
+                    await _unidadDeTrabajo.TUsuario.ObtenerEntidadAsync(
+                        x => x.CorreoElectronico == correo);
+
+                if (!usuarioActual.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = usuarioActual.Error;
+                    return resultado;
+                }
+
+                var usuario = usuarioActual.Data;
+
+                if (usuario == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = ErrorCodigo;
+                    return resultado;
+                }
+
+                var errorCodigo = await ComprobarCodigoAsync(usuario, datos.Codigo, PropositoRecuperar);
+
+                if (errorCodigo != null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = errorCodigo;
+                    return resultado;
+                }
+
+                usuario.ContrasenaHash =
+                    BCrypt.Net.BCrypt.EnhancedHashPassword(contrasena, FactorTrabajoHash);
+                // El código llegó a su correo: también queda verificado
+                usuario.CorreoVerificado = true;
+                LimpiarCodigo(usuario);
+
+                var respuestaRepositorio =
+                    await _unidadDeTrabajo.TUsuario.ModificarAsync(usuario);
+
+                if (!respuestaRepositorio.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = respuestaRepositorio.Error;
+                    return resultado;
+                }
+
+                // Cierra todas las sesiones  y entra
+                return await CrearSesionAsync(usuario);
+
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Error al restablecer la contraseña de {Correo}", correo);
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
+        public async Task<Respuesta<bool>> SolicitarCambioContrasenaAsync(string token)
+        {
+            var resultado = new Respuesta<bool>();
+
+            try
+            {
+                var usuario = await ObtenerUsuarioDeSesionAsync(token);
+
+                if (usuario == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = ErrorSesion;
+                    return resultado;
+                }
+
+                return await EnviarCodigoAsync(usuario, PropositoCambiar);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al pedir el cambio de contraseña.");
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
+        public async Task<Respuesta<clsSesionIniciada>> CambiarContrasenaAsync(
+           string token, clsCambioContrasena datos)
+        {
+            var resultado = new Respuesta<clsSesionIniciada>();
+
+            var contrasena = datos.ContrasenaNueva ?? string.Empty;
+
+            try
+            {
+                var usuario = await ObtenerUsuarioDeSesionAsync(token);
+
+                if (usuario == null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = ErrorSesion;
+                    return resultado;
+                }
+
+                var errorContrasena = ValidarContrasenaNueva(contrasena);
+
+                if (errorContrasena != null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = errorContrasena;
+                    return resultado;
+                }
+
+                if (VerificarContrasena(contrasena, usuario.ContrasenaHash))
+                {
+                    resultado.Success = false;
+                    resultado.Error = "La contraseña nueva debe ser distinta a la actual.";
+                    return resultado;
+                }
+
+                var errorCodigo = await ComprobarCodigoAsync(usuario, datos.Codigo, PropositoCambiar);
+
+                if (errorCodigo != null)
+                {
+                    resultado.Success = false;
+                    resultado.Error = errorCodigo;
+                    return resultado;
+                }
+
+                usuario.ContrasenaHash =
+                    BCrypt.Net.BCrypt.EnhancedHashPassword(contrasena, FactorTrabajoHash);
+                LimpiarCodigo(usuario);
+
+                var respuestaRepositorio =
+                    await _unidadDeTrabajo.TUsuario.ModificarAsync(usuario);
+
+                if (!respuestaRepositorio.Success)
+                {
+                    resultado.Success = false;
+                    resultado.Error = respuestaRepositorio.Error;
+                    return resultado;
+                }
+
+                // Cierra todas las sesiones y le da una nueva a este dispositivo:
+                return await CrearSesionAsync(usuario);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar la contraseña.");
+
+                resultado.Success = false;
+                resultado.Error = ex.GetBaseException().Message;
+            }
+
+            return resultado;
+        }
+
         // ---------- Auxiliares ----------
+
+        // Genera, guarda y envía un código nuevo, respetando la espera entre envíos
+        private async Task<Respuesta<bool>> EnviarCodigoAsync(Usuario usuario, string proposito)
+        {
+            var resultado = new Respuesta<bool>();
+
+            if (usuario.CodigoEnviado.HasValue)
+            {
+                var espera = SegundosEsperaReenvio -
+                    (int)(DateTime.Now - usuario.CodigoEnviado.Value).TotalSeconds;
+
+                if (espera > 0)
+                {
+                    resultado.Success = false;
+                    resultado.Error = $"Espera {espera} segundos para pedir otro código.";
+                    return resultado;
+                }
+            }
+
+            var codigo = AsignarCodigoNuevo(usuario, proposito);
+
+            var respuestaRepositorio =
+                await _unidadDeTrabajo.TUsuario.ModificarAsync(usuario);
+
+            if (!respuestaRepositorio.Success)
+            {
+                resultado.Success = false;
+                resultado.Error = respuestaRepositorio.Error;
+                return resultado;
+            }
+
+            if (!await _servicioCorreo.EnviarCodigoVerificacionAsync(
+                    usuario.CorreoElectronico, codigo, proposito))
+            {
+                resultado.Success = false;
+                resultado.Error = "No se pudo enviar el correo. Intenta más tarde.";
+                return resultado;
+            }
+
+            resultado.Data = true;
+            return resultado;
+        }
+
+        // Revisa el código pendiente. Devuelve null si es correcto o el mensaje de
+        // error; si es incorrecto suma un intento
+        private async Task<string?> ComprobarCodigoAsync(Usuario usuario, string? codigo, string proposito)
+        {
+            codigo = (codigo ?? string.Empty).Trim();
+
+            if (codigo.Length != 6)
+            {
+                return ErrorCodigo;
+            }
+
+            if (usuario.CodigoVerificacionHash == null ||
+                usuario.PropositoCodigo != proposito ||
+                usuario.CodigoExpira < DateTime.Now)
+            {
+                return "El código venció. Pide uno nuevo.";
+            }
+
+            if (usuario.IntentosCodigo >= MaximoIntentosCodigo)
+            {
+                return "Demasiados intentos. Pide un código nuevo.";
+            }
+
+            if (!VerificarContrasena(codigo, usuario.CodigoVerificacionHash))
+            {
+                usuario.IntentosCodigo++;
+                await _unidadDeTrabajo.TUsuario.ModificarAsync(usuario);
+
+                var restantes = MaximoIntentosCodigo - usuario.IntentosCodigo;
+
+                return restantes > 0
+                    ? $"Código incorrecto. Te quedan {restantes} intentos."
+                    : "Demasiados intentos. Pide un código nuevo.";
+            }
+
+            return null;
+        }
+
+        private static void LimpiarCodigo(Usuario usuario)
+        {
+            usuario.CodigoVerificacionHash = null;
+            usuario.CodigoExpira = null;
+            usuario.PropositoCodigo = null;
+            usuario.IntentosCodigo = 0;
+        }
+
+        // El usuario (entidad) del token, o null si la sesión no es válida
+        private async Task<Usuario?> ObtenerUsuarioDeSesionAsync(string token)
+        {
+            var sesion = await ValidarSesionAsync(token);
+
+            if (!sesion.Success || sesion.Data == null)
+            {
+                return null;
+            }
+
+            var idUsuario = sesion.Data.IdUsuario;
+
+            var usuarioActual =
+                await _unidadDeTrabajo.TUsuario.ObtenerEntidadAsync(
+                    x => x.IdUsuario == idUsuario);
+
+            return usuarioActual.Success ? usuarioActual.Data : null;
+        }
+
+        private static string? ValidarContrasenaNueva(string contrasena)
+        {
+            if (contrasena.Length < LargoMinimoContrasena ||
+                contrasena.Length > LargoMaximoContrasena)
+            {
+                return $"La contraseña debe tener entre {LargoMinimoContrasena} y {LargoMaximoContrasena} caracteres.";
+            }
+
+            return null;
+        }
 
         private async Task<Respuesta<clsSesionIniciada>> CrearSesionAsync(Usuario usuario)
         {
@@ -763,7 +1113,7 @@ namespace PacmanLogicaNegocios.Implementacion
 
         // Genera el código de 6 dígitos, guarda su hash y devuelve el código en claro
         // para enviarlo por correo
-        private static string AsignarCodigoNuevo(Usuario usuario)
+        private static string AsignarCodigoNuevo(Usuario usuario, string proposito)
         {
             var codigo = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
 
@@ -772,6 +1122,7 @@ namespace PacmanLogicaNegocios.Implementacion
             usuario.CodigoExpira = DateTime.Now.AddMinutes(MinutosVigenciaCodigo);
             usuario.CodigoEnviado = DateTime.Now;
             usuario.IntentosCodigo = 0;
+            usuario.PropositoCodigo = proposito;
 
             return codigo;
         }

@@ -60,7 +60,7 @@ Content-Type: application/json
 
 {
   "usuario": "jugador_prueba",
-  "contrasena": "Prueba1234"
+  "contrasena": "Otra12345"
 }
 
 ### 6. Usuario: sugerencias de nombre
@@ -128,4 +128,34 @@ Accept: application/json
 POST {{PacmanApi_HostAddress}}/api/Usuario/CerrarSesion
 Authorization: Bearer {{sesion.response.body.$.data.token}}
 
-###
+### 13. Recuperar contraseña: pedir código (sin sesión)
+POST {{PacmanApi_HostAddress}}/api/Usuario/SolicitarRecuperacion
+Content-Type: application/json
+
+{
+  "correoElectronico": "{{correoNuevo}}"
+}
+
+### 14. Recuperar contraseña: código + contraseña nueva (devuelve sesión)
+POST {{PacmanApi_HostAddress}}/api/Usuario/RestablecerContrasena
+Content-Type: application/json
+
+{
+  "correoElectronico": "{{correoNuevo}}",
+  "codigo": "{{codigo}}",
+  "contrasenaNueva": "Nueva12345"
+}
+
+### 15. Cambiar contraseña: pedir código (usa el token de la petición 5)
+POST {{PacmanApi_HostAddress}}/api/Usuario/SolicitarCambioContrasena
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+
+### 16. Cambiar contraseña: código + contraseña nueva
+POST {{PacmanApi_HostAddress}}/api/Usuario/CambiarContrasena
+Authorization: Bearer {{sesion.response.body.$.data.token}}
+Content-Type: application/json
+
+{
+  "codigo": "{{codigo}}",
+  "contrasenaNueva": "Otra12345"
+}

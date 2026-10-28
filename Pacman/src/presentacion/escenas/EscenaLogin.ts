@@ -16,6 +16,7 @@ import { COLOR, estiloTexto } from '../ui/Paleta';
 import { crearPanel } from '../ui/Panel';
 import { DatosVerificacion } from './EscenaVerificacion';
 import { Aviso, continuarConSesion, dibujarPantallaSesion } from './FlujoSesion';
+import { DatosContrasena } from './EscenaContrasena';
 
 const AYUDA_SIN_CONEXION = 'No se pudo conectar con el servidor.\nRevisa SERVIDOR y que la API esté encendida.';
 
@@ -61,6 +62,14 @@ export class EscenaLogin extends Scene {
             largoMaximo: 128,
             alEnter: () => this.entrar(),
         });
+
+                // Dentro del panel, debajo de la contraseña
+        this.add
+            .text(centro + 220, 452, '¿Olvidaste tu contraseña?', estiloTexto(10, COLOR.CELESTE))
+            .setOrigin(1, 0.5)
+            .setPadding(8, 8, 8, 8)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerup', () => this.olvideContrasena());
 
         this.aviso = new Aviso(this, 510);
 
@@ -167,6 +176,21 @@ export class EscenaLogin extends Scene {
 
         guardarSesion(respuesta.data);
         continuarConSesion(this, respuesta.data.usuario);
+    }
+
+        // Si ya escribió su correo, se lo pasa para no escribirlo otra vez
+    private olvideContrasena(): void {
+        if (this.ocupado) {
+            return;
+        }
+
+        const escrito = this.campoUsuario.value.trim();
+        const datos: DatosContrasena = {
+            modo: 'recuperar',
+            correo: escrito.includes('@') ? escrito.toLowerCase() : '',
+        };
+
+        this.scene.start('EscenaContrasena', datos);
     }
 
     private setOcupado(ocupado: boolean, texto = ''): void {

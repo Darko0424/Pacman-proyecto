@@ -62,7 +62,7 @@ export function crearPanel(
 
 // Marco morado de toda la pantalla como el del laberinto
 export function dibujarMarco(escena: Scene): void {
-    const formulario = ['EscenaLogin', 'EscenaRegistro', 'EscenaVerificacion', 'EscenaNombre', 'EscenaServidor']
+    const formulario = ['EscenaLogin', 'EscenaRegistro', 'EscenaVerificacion', 'EscenaNombre', 'EscenaServidor', 'EscenaContrasena']
         .includes(escena.sys.settings.key);
     prepararPantalla(escena, formulario ? 'formulario' : 'interfaz');
 

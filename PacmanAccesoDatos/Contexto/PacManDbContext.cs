@@ -298,6 +298,10 @@ public partial class PacManDbContext : DbContext
             entity.Property(e => e.CodigoExpira).HasColumnName("codigo_expira");
             entity.Property(e => e.CodigoEnviado).HasColumnName("codigo_enviado");
             entity.Property(e => e.IntentosCodigo).HasColumnName("intentos_codigo");
+            entity.Property(entity => entity.PropositoCodigo)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("proposito_codigo");
         });
 
         modelBuilder.Entity<HistorialEntrada>(entity =>
