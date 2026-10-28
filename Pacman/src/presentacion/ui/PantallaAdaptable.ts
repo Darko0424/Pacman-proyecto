@@ -12,6 +12,14 @@ interface InsetsNativos {
 
 let pantalla: PantallaAdaptable | null = null;
 
+// Tras un toque el navegador repite el gesto como mouse (mousedown, mouseup...)
+// para páginas viejas. Llega en unos cientos de milisegundos.
+const EVENTOS_MOUSE_SIMULADOS = ['mousemove', 'mousedown', 'mouseup'] as const;
+const ESPERA_MOUSE_SIMULADO_MS = 800;
+
+// sourceCapabilities solo existe en Chromium (la WebView de Android lo tiene)
+type EventoMouseConOrigen = MouseEvent & { sourceCapabilities?: { firesTouchEvents: boolean } | null };
+
 interface Lienzo {
     // Tamaño del juego en unidades de Phaser
     ancho: number;
@@ -80,6 +88,7 @@ class PantallaAdaptable {
     private cuadroCampo = 0;
     private campoVisible: HTMLInputElement | null = null;
     private destruida = false;
+    private ultimoToque = -Infinity;
 
     constructor(private readonly juego: Game, padre: string) {
         this.aplicacion = document.getElementById('app')!;
@@ -94,6 +103,9 @@ class PantallaAdaptable {
         this.aplicacion.addEventListener('scroll', this.actualizarLimites);
         this.aplicacion.addEventListener('pointerdown', this.alTocarContenido, true);
         this.aplicacion.addEventListener('wheel', this.permitirDesplazamiento);
+        this.contenedor.addEventListener('touchend', this.registrarToque, { capture: true, passive: true });
+        EVENTOS_MOUSE_SIMULADOS.forEach((tipo) =>
+            this.contenedor.addEventListener(tipo, this.descartarMouseSimulado, true));
         juego.events.on('postrender', this.asegurarCampoVisible);
         juego.events.once('destroy', this.destruir, this);
         this.actualizar();
@@ -239,6 +251,23 @@ class PantallaAdaptable {
         }
     };
 
+    private readonly registrarToque = (): void => {
+        this.ultimoToque = performance.now();
+    };
+
+    // Con touch.capture apagado (pantallas que se desplazan) Phaser recibe el
+    // toque y además su copia de mouse sobre el canvas: cada toque contaba
+    // doble. El canvas no la ve; el resto de la página sí, para mover el foco.
+    private readonly descartarMouseSimulado = (evento: Event): void => {
+        const origen = (evento as EventoMouseConOrigen).sourceCapabilities;
+        const simulado = origen?.firesTouchEvents === true ||
+            performance.now() - this.ultimoToque < ESPERA_MOUSE_SIMULADO_MS;
+
+        if (simulado && evento.target === this.juego.canvas) {
+            evento.stopPropagation();
+        }
+    };
+
     private readonly actualizarLimites = (): void => {
         this.juego.scale.updateBounds();
     };
@@ -257,6 +286,9 @@ class PantallaAdaptable {
         this.aplicacion.removeEventListener('scroll', this.actualizarLimites);
         this.aplicacion.removeEventListener('pointerdown', this.alTocarContenido, true);
         this.aplicacion.removeEventListener('wheel', this.permitirDesplazamiento);
+        this.contenedor.removeEventListener('touchend', this.registrarToque, true);
+        EVENTOS_MOUSE_SIMULADOS.forEach((tipo) =>
+            this.contenedor.removeEventListener(tipo, this.descartarMouseSimulado, true));
         this.juego.events.off('postrender', this.asegurarCampoVisible);
         pantalla = null;
     }
