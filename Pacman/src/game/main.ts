@@ -15,7 +15,8 @@ import { EscenaHistorial } from '../presentacion/escenas/EscenaHistorial';
 import { iniciarPantallaAdaptable } from '../presentacion/ui/PantallaAdaptable';
 import { borrarSesion } from '../servicios/ClienteApi';
 import { conexionTiempoReal } from '../servicios/ConexionTiempoReal';
-
+import { EscenaContrasena } from '../presentacion/escenas/EscenaContrasena';
+import { EscenaOpciones } from '../presentacion/escenas/EscenaOpciones';
 
 //  Find out more information about the Game Config at:
 //  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -48,6 +49,8 @@ const config: Phaser.Types.Core.GameConfig = {
         EscenaVerificacion,
         EscenaNombre,
         EscenaMenu,
+        EscenaOpciones,
+        EscenaContrasena,
         EscenaRanking,
         EscenaHistorial,
         EscenaListaSalas,

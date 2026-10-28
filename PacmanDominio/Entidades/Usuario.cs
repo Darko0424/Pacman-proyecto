@@ -27,6 +27,8 @@ public partial class Usuario
 
     public byte IntentosCodigo { get; set; }
 
+    public string? PropositoCodigo { get; set; }
+
     public virtual ICollection<ParticipanteRonda> ParticipantesRonda { get; set; } = new List<ParticipanteRonda>();
 
     public virtual ICollection<SesionMovil> SesionesMoviles { get; set; } = new List<SesionMovil>();

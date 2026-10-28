@@ -8,11 +8,11 @@
     <File Path="Base De Datos/06_DatosCatalogos.sql" />
     <File Path="Base De Datos/07_DatosPrueba.sql" />
     <File Path="Base De Datos/08_VerificacionCorreo.sql" />
+    <File Path="Base De Datos/09_PropositoCodigo.sql" />
   </Folder>
   <Project Path="Pacman/Pacman.esproj">
     <Build />
-    <Deploy Solution="Debug|*" />
-    <Deploy Solution="Release|*" />
+    <Deploy />
   </Project>
   <Project Path="PacmanAccesoDatos/PacmanAccesoDatos.csproj" />
   <Project Path="PacmanApi/PacmanApi.csproj" />

@@ -4,7 +4,7 @@ import { actualizarUsuarioSesion, asignarNombre, obtenerSesion, sugerirNombres }
 import { Boton } from '../ui/Boton';
 import { crearCampo } from '../ui/CampoTexto';
 import { COLOR, css, estiloTexto } from '../ui/Paleta';
-import { Aviso, ESCENA_PRINCIPAL, continuarConSesion, dibujarPantallaSesion } from './FlujoSesion';
+import { Aviso, continuarConSesion, dibujarPantallaSesion } from './FlujoSesion';
 
 
 const PATRON_NOMBRE = /^[A-Za-z0-9_.]{3,50}$/;
@@ -66,7 +66,7 @@ export class EscenaNombre extends Scene {
             new Boton(this, centro - 170, 660, 'VOLVER', {
                 ancho: 300,
                 color: COLOR.GRIS_CLARO,
-                alPulsar: () => this.scene.start(ESCENA_PRINCIPAL),
+                alPulsar: () => this.scene.start('EscenaOpciones'),
             });
         }
         this.events.once('shutdown', () => this.espera?.remove());

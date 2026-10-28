@@ -22,7 +22,8 @@ namespace PacmanApi.Servicios
             _logger = logger;
         }
 
-        public async Task<bool> EnviarCodigoVerificacionAsync(string destinatario, string codigo)
+        public async Task<bool> EnviarCodigoVerificacionAsync(
+    string destinatario, string codigo, string proposito = "VERIFICAR")
         {
             var usuario = _configuracion.Usuario.Trim();
             // Google muestra la clave como "abcd efgh ijkl mnop": se quitan los espacios
@@ -34,8 +35,8 @@ namespace PacmanApi.Servicios
                 {
                     // Para probar sin la clave de Gmail: el código sale en la consola de la API
                     _logger.LogWarning(
-                        "Correo sin configurar. Código de {Destinatario}: {Codigo}",
-                        destinatario, codigo);
+                        "Correo sin configurar. Código {Proposito} de {Destinatario}: {Codigo}",
+                        proposito, destinatario, codigo);
                     return true;
                 }
 
@@ -43,11 +44,13 @@ namespace PacmanApi.Servicios
                 return false;
             }
 
+            var textos = ObtenerTextos(proposito, codigo);
+
             var mensaje = new MimeMessage();
             mensaje.From.Add(new MailboxAddress(_configuracion.NombreRemitente, usuario));
             mensaje.To.Add(MailboxAddress.Parse(destinatario));
-            mensaje.Subject = $"{codigo} es tu código de Pac-Man";
-            mensaje.Body = new BodyBuilder { HtmlBody = CrearCuerpo(codigo) }.ToMessageBody();
+            mensaje.Subject = textos.Asunto;
+            mensaje.Body = new BodyBuilder { HtmlBody = CrearCuerpo(codigo, textos) }.ToMessageBody();
 
             using var cliente = new SmtpClient();
 
@@ -71,12 +74,34 @@ namespace PacmanApi.Servicios
                 return false;
             }
         }
-        private static string CrearCuerpo(string codigo) => $"""
+
+        private sealed record TextosCorreo(string Asunto, string Explicacion, string Pie);
+
+        private static TextosCorreo ObtenerTextos(string proposito, string codigo) => proposito switch
+        {
+            "RECUPERAR" => new(
+                $"{codigo} para recuperar tu cuenta de Pac-Man",
+                "Tu código para recuperar la contraseña es:",
+                "Si no lo pediste, ignora este correo: tu contraseña no cambia."),
+            "CAMBIAR" => new(
+                $"{codigo} para cambiar tu contraseña de Pac-Man",
+                "Tu código para cambiar tu contraseña es:",
+                "Si no fuiste tú, no compartas este código: alguien tiene tu sesión abierta. " +
+                "Cámbiala desde \"¿Olvidaste tu contraseña?\" en el inicio de sesión."
+                ),
+            _ => new(
+                $"{codigo} es tu código de Pac-Man",
+                "Tu código de verificación es:",
+                "Si no creaste una cuenta, ignora este correo."),
+        };
+
+
+        private static string CrearCuerpo(string codigo, TextosCorreo textos) => $"""
             <div style="font-family:Arial,sans-serif;background:#272736;color:#ffffff;padding:32px;text-align:center">
                 <h1 style="color:#ffe478;margin:0 0 16px">PAC-MAN</h1>
-                <p>Tu código de verificación es:</p>
+                <p>{textos.Explicacion}</p>
                 <p style="font-size:36px;letter-spacing:8px;font-weight:bold;color:#4da6ff;margin:16px 0">{codigo}</p>
-                <p style="color:#c2c2d1">Vence en 15 minutos. Si no creaste una cuenta, ignora este correo.</p>
+                <p style="color:#c2c2d1">Vence en 15 minutos. {textos.Pie}</p>
             </div>
             """;
     }

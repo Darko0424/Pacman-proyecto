@@ -95,6 +95,50 @@ public class UsuarioController : ControllerBase
         return Ok(resultado);
     }
 
+    [HttpPost("SolicitarRecuperacion")]
+    public async Task<IActionResult> SolicitarRecuperacion([FromBody] clsSolicitudCodigo datos)
+    {
+        var resultado = await _usuarioLN.SolicitarRecuperacionAsync(datos);
+
+        if (!resultado.Success)
+            return BadRequest(resultado);
+
+        return Ok(resultado);
+    }
+
+    [HttpPost("RestablecerContrasena")]
+    public async Task<IActionResult> RestablecerContrasena([FromBody] clsRestablecerContrasena datos)
+    {
+        var resultado = await _usuarioLN.RestablecerContrasenaAsync(datos);
+
+        if (!resultado.Success)
+            return BadRequest(resultado);
+
+        return Ok(resultado);
+    }
+
+    [HttpPost("SolicitarCambioContrasena")]
+    public async Task<IActionResult> SolicitarCambioContrasena()
+    {
+        var resultado = await _usuarioLN.SolicitarCambioContrasenaAsync(Request.ObtenerToken());
+
+        if (!resultado.Success)
+            return BadRequest(resultado);
+
+        return Ok(resultado);
+    }
+
+    [HttpPost("CambiarContrasena")]
+    public async Task<IActionResult> CambiarContrasena([FromBody] clsCambioContrasena datos)
+    {
+        var resultado = await _usuarioLN.CambiarContrasenaAsync(Request.ObtenerToken(), datos);
+
+        if (!resultado.Success)
+            return BadRequest(resultado);
+
+        return Ok(resultado);
+    }
+
     [HttpPost("CerrarSesion")]
     public async Task<IActionResult> CerrarSesion()
     {
