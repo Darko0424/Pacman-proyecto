@@ -106,8 +106,8 @@ export class HUD {
 
         crearPanel(escena, der.x, der.y, der.ancho, der.alto);
 
-        this.botonSilencio = new Boton(escena, der.x + der.ancho - 47, der.y + 30, '', {
-            ancho: 70,
+        this.botonSilencio = new Boton(escena, der.x + der.ancho - 54, der.y + 30, '', {
+            ancho: 88,
             alto: 32,
             tamanoTexto: 8,
             color: COLOR.GRIS_CLARO,
