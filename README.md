@@ -389,5 +389,4 @@ en la PC y, en **SERVIDOR** dentro de la app, escribir la IP de la PC (misma Wi-
 escanear el QR del Dev Tunnel persistente de Visual Studio (otras redes).
 La API de C# y SQL Server siguen funcionando en la PC.
 
-Consultar [la guía de Android](Pacman/ANDROID.md) para requisitos, instalación y
-conexión. La dirección de la red y los APK generados quedan fuera de Git.
+La dirección de la red y los APK generados quedan fuera de Git.
