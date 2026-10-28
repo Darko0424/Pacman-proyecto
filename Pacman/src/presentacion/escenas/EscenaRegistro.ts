@@ -14,11 +14,11 @@ const LARGO_MAXIMO_CORREO = 100;
 const LARGO_MINIMO_CONTRASENA = 8;
 const LARGO_MAXIMO_CONTRASENA = 128;
 const LARGO_MINIMO_USUARIO_CORREO = 3;
-const REQUISITOS_CONTRASENA =
+export const REQUISITOS_CONTRASENA =
     `Mínimo ${LARGO_MINIMO_CONTRASENA} caracteres, con mayúscula, minúscula, número y símbolo.`;
 
 // Mismas reglas que UsuarioLN.ValidarContrasena en la API
-function validarContrasena(contrasena: string, usuarioCorreo: string): string | null {
+export function validarContrasena(contrasena: string, usuarioCorreo: string): string | null {
     if (contrasena.length < LARGO_MINIMO_CONTRASENA || contrasena.length > LARGO_MAXIMO_CONTRASENA) {
         return `La contraseña debe tener entre ${LARGO_MINIMO_CONTRASENA} y ${LARGO_MAXIMO_CONTRASENA} caracteres.`;
     }

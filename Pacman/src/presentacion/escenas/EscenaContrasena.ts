@@ -14,6 +14,7 @@ import { COLOR, estiloTexto } from '../ui/Paleta';
 import { crearPanel } from '../ui/Panel';
 import { ANCHO_INTERFAZ } from '../ui/PantallaAdaptable';
 import { Aviso, continuarConSesion, dibujarPantallaSesion } from './FlujoSesion';
+import { REQUISITOS_CONTRASENA, validarContrasena } from './EscenaRegistro';
 
 // recuperar: "¿Olvidaste tu contraseña?" desde el login (sin sesión)
 // cambiar: desde Opciones, con la sesión iniciada
@@ -30,7 +31,6 @@ export interface DatosContrasena {
 
 const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LARGO_CODIGO = 6;
-const LARGO_MINIMO_CONTRASENA = 8;
 const LARGO_MAXIMO_CONTRASENA = 128;
 const SEGUNDOS_REENVIO = 60;
 
@@ -204,7 +204,7 @@ export class EscenaContrasena extends Scene {
         this.add.text(centro - 220, 395, 'Contraseña nueva', estiloTexto(16, COLOR.MURO_CLARO)).setOrigin(0, 1);
         this.campoNueva = crearCampo(this, centro, 435, {
             tipo: 'password',
-            ejemplo: 'Mínimo 8 caracteres',
+            ejemplo: 'Ej: Contra#1',
             autocompletar: 'new-password',
             largoMaximo: LARGO_MAXIMO_CONTRASENA,
             alEnter: () => this.campoConfirmar?.focus(),
@@ -232,6 +232,8 @@ export class EscenaContrasena extends Scene {
             alPulsar: () => this.confirmar(),
         });
 
+        //Que sepa las reglas antes de escribirla
+        this.aviso.info(REQUISITOS_CONTRASENA);
         // El código se acaba de enviar: hay que esperar para pedir otro
         this.iniciarEspera();
         this.campoCodigo.focus();
@@ -250,8 +252,10 @@ export class EscenaContrasena extends Scene {
             return;
         }
 
-        if (nueva.length < LARGO_MINIMO_CONTRASENA || nueva.length > LARGO_MAXIMO_CONTRASENA) {
-            this.aviso.error(`La contraseña debe tener entre ${LARGO_MINIMO_CONTRASENA} y ${LARGO_MAXIMO_CONTRASENA} caracteres.`);
+        const errorContrasena = validarContrasena(nueva, (this.datos.correo ?? '').split('@')[0]);
+
+        if (errorContrasena) {
+            this.aviso.error(errorContrasena);
             return;
         }
 

@@ -764,7 +764,7 @@ namespace PacmanLogicaNegocios.Implementacion
 
             try
             {
-                var errorContrasena = ValidarContrasenaNueva(contrasena);
+                var errorContrasena = ValidarContrasena(contrasena, correo.Split('@')[0]);
 
                 if (errorContrasena != null)
                 {
@@ -879,7 +879,7 @@ namespace PacmanLogicaNegocios.Implementacion
                     return resultado;
                 }
 
-                var errorContrasena = ValidarContrasenaNueva(contrasena);
+                var errorContrasena = ValidarContrasena(contrasena, usuario.CorreoElectronico.Split('@')[0]);
 
                 if (errorContrasena != null)
                 {
@@ -1039,17 +1039,6 @@ namespace PacmanLogicaNegocios.Implementacion
                     x => x.IdUsuario == idUsuario);
 
             return usuarioActual.Success ? usuarioActual.Data : null;
-        }
-
-        private static string? ValidarContrasenaNueva(string contrasena)
-        {
-            if (contrasena.Length < LargoMinimoContrasena ||
-                contrasena.Length > LargoMaximoContrasena)
-            {
-                return $"La contraseña debe tener entre {LargoMinimoContrasena} y {LargoMaximoContrasena} caracteres.";
-            }
-
-            return null;
         }
 
         private async Task<Respuesta<clsSesionIniciada>> CrearSesionAsync(Usuario usuario)
