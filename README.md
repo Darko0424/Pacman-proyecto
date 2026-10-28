@@ -385,8 +385,8 @@ El proyecto nativo está en `Pacman/android`, con su configuración en
 `Pacman/capacitor.config.json`. La guía de Android explica cómo generar la APK
 desde Android Studio. Para probarla,
 iniciar `PacmanApi` con el perfil `red-local`, abrir `http://localhost:5253/conectar`
-en la PC y escanear el QR desde **SERVIDOR** en la app. El QR de red local requiere
-la misma Wi-Fi; un Dev Tunnel persistente de Visual Studio permite usar otras redes.
+en la PC y, en **SERVIDOR** dentro de la app, escribir la IP de la PC (misma Wi-Fi) o
+escanear el QR del Dev Tunnel persistente de Visual Studio (otras redes).
 La API de C# y SQL Server siguen funcionando en la PC.
 
 Consultar [la guía de Android](Pacman/ANDROID.md) para requisitos, instalación y

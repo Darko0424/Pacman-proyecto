@@ -19,8 +19,9 @@ public sealed class Fantasma : Entidad
     }
 
     // idUsuario null = fantasma controlado por la IA
-    public Fantasma(byte idPersonaje, int? idUsuario, Casilla posicionInicial, int vidas)
-        : base(idPersonaje, idUsuario, posicionInicial, vidas)
+    public Fantasma(
+        byte idPersonaje, int? idUsuario, Casilla posicionInicial, int vidas, bool vidasInfinitas = false)
+        : base(idPersonaje, idUsuario, posicionInicial, vidas, vidasInfinitas)
     {
         if (!CatalogoPersonajes.EsFantasma(idPersonaje))
         {

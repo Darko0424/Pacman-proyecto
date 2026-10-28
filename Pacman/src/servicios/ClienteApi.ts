@@ -104,29 +104,6 @@ async function solicitar<T>(
     }
 }
 
-// Comprueba que en esa dirección responda PacmanApi con su base de datos,
-// antes de guardarla como servidor
-export async function probarServidor(url: string): Promise<IRespuesta<boolean>> {
-    const cancelar = new AbortController();
-    const espera = setTimeout(() => cancelar.abort(), 5000);
-
-    try {
-        const respuesta = await fetch(`${url}/api/Dificultad/Listar`, { signal: cancelar.signal });
-        const cuerpo = (await respuesta.json()) as IRespuesta<unknown>;
-
-        return cuerpo.success
-            ? { success: true, data: true, error: '' }
-            : { success: false, data: null, error: 'El servidor respondió, pero sin base de datos.' };
-    } catch (error) {
-        // El detalle (bloqueo de HTTP, CORS, tiempo agotado) se ve con chrome://inspect
-        console.warn(`No respondió ${url}`, error);
-
-        return { success: false, data: null, error: 'No hay ningún servidor de Pac-Man en esa dirección.' };
-    } finally {
-        clearTimeout(espera);
-    }
-}
-
 export function iniciarSesion(usuario: string, contrasena: string): Promise<IRespuesta<SesionIniciada>> {
     return solicitar<SesionIniciada>('POST', 'api/Usuario/IniciarSesion', { usuario, contrasena });
 }

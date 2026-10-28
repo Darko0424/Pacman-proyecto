@@ -32,10 +32,19 @@ const OPCIONES_CAJAS: OpcionSelector<FrecuenciaCajas>[] = [
     { valor: FrecuenciaCajas.Alta, texto: 'MUCHAS' },
 ];
 
-const OPCIONES_CHOQUE: OpcionSelector<boolean>[] = [
+const OPCIONES_ACTIVADO: OpcionSelector<boolean>[] = [
     { valor: true, texto: 'ACTIVADO' },
     { valor: false, texto: 'DESACTIVADO' },
 ];
+
+const OPCIONES_MODO: OpcionSelector<boolean>[] = [
+    { valor: false, texto: 'NORMAL' },
+    { valor: true, texto: 'CLASICO' },
+];
+
+// Coinciden con ConfiguracionSala.OpcionesReaparicionFantasmas
+const OPCIONES_REAPARICION: OpcionSelector<number>[] = [30, 20, 10, 5]
+    .map((segundos) => ({ valor: segundos, texto: `${segundos} SEG` }));
 
 const OPCIONES_ROL: OpcionSelector<CodigoRol>[] = [
     { valor: null, texto: 'AL AZAR' },
@@ -49,6 +58,10 @@ const COLORES_PLAZA = [COLOR.PACMAN, COLOR.VERDE, COLOR.ROJO, COLOR.ROSA];
 const PANEL_Y = 150;
 const PANEL_ALTO = 440;
 const PLAZA_ALTO = 84;
+
+// Filas del menú de configuración; se acomodan según cuáles se ven
+const PRIMERA_OPCION_Y = PANEL_Y + 80;
+const ALTO_OPCION = 46;
 
 interface Plaza {
     color: number;
@@ -82,6 +95,9 @@ export class EscenaSala extends Scene {
     private selectorVidas: Selector<number> | null = null;
     private selectorChoque: Selector<boolean> | null = null;
     private selectorCajas: Selector<FrecuenciaCajas> | null = null;
+    private selectorBandos: Selector<boolean> | null = null;
+    private selectorModo: Selector<boolean> | null = null;
+    private selectorReaparicion: Selector<number> | null = null;
     private selectorRol: Selector<CodigoRol> | null = null;
     private selectorX: number;
     private selectorAncho: number;
@@ -243,7 +259,7 @@ export class EscenaSala extends Scene {
         }));
 
         this.selectorDificultad = new Selector(
-            this, this.selectorX, PANEL_Y + 90, this.selectorAncho, 'DIFICULTAD', opciones,
+            this, this.selectorX, PRIMERA_OPCION_Y, this.selectorAncho, 'DIFICULTAD', opciones,
             (idDificultad) => this.configurar({ idDificultad }));
 
         this.mostrar(this.sala);
@@ -283,23 +299,36 @@ export class EscenaSala extends Scene {
         this.selectorX = selectorX;
         this.selectorAncho = selectorAncho;
 
-        // DIFICULTAD va en PANEL_Y + 90 y se crea al recibir el catálogo
+        // DIFICULTAD va primero y se crea al recibir el catálogo. Las filas
+        // se crean en y = 0 y mostrar() las acomoda.
         const vidas: OpcionSelector<number>[] = [];
         for (let v = VIDAS_MINIMAS; v <= VIDAS_MAXIMAS; v++) {
             vidas.push({ valor: v, texto: String(v) });
         }
 
-        this.selectorVidas = new Selector(this, selectorX, PANEL_Y + 150, selectorAncho, 'VIDAS', vidas,
+        this.selectorVidas = new Selector(this, selectorX, 0, selectorAncho, 'VIDAS', vidas,
             (cantidad) => this.configurar({ vidas: cantidad }));
 
-        this.selectorChoque = new Selector(this, selectorX, PANEL_Y + 210, selectorAncho, 'CHOQUE PAC-MAN',
-            OPCIONES_CHOQUE, (colisionEntrePacMan) => this.configurar({ colisionEntrePacMan }));
+        this.selectorChoque = new Selector(this, selectorX, 0, selectorAncho, 'CHOQUE PAC-MAN',
+            OPCIONES_ACTIVADO, (colisionEntrePacMan) => this.configurar({ colisionEntrePacMan }));
 
-        this.selectorCajas = new Selector(this, selectorX, PANEL_Y + 270, selectorAncho, 'CAJAS', OPCIONES_CAJAS,
+        this.selectorCajas = new Selector(this, selectorX, 0, selectorAncho, 'CAJAS', OPCIONES_CAJAS,
             (frecuenciaCajas) => this.configurar({ frecuenciaCajas }));
 
+        // Solo en multijugador: contra la IA el rol ya se conserva
+        this.selectorBandos = new Selector(this, selectorX, 0, selectorAncho, 'BANDOS FIJOS',
+            OPCIONES_ACTIVADO, (bandosFijos) => this.configurar({ bandosFijos }));
+
+        this.selectorModo = new Selector(this, selectorX, 0, selectorAncho, 'MODO', OPCIONES_MODO,
+            (modoClasico) => this.configurar({ modoClasico }));
+
+        // Solo en el modo clásico
+        this.selectorReaparicion = new Selector(this, selectorX, 0, selectorAncho, 'REAPARICION',
+            OPCIONES_REAPARICION,
+            (segundosReaparicionFantasmas) => this.configurar({ segundosReaparicionFantasmas }));
+
         // Solo aparece si juega solo contra la IA
-        this.selectorRol = new Selector(this, selectorX, PANEL_Y + 340, selectorAncho, 'TU ROL', OPCIONES_ROL,
+        this.selectorRol = new Selector(this, selectorX, 0, selectorAncho, 'TU ROL', OPCIONES_ROL,
             (rol) => this.elegirRol(rol));
 
         this.notaConfiguracion = this.add
@@ -314,18 +343,25 @@ export class EscenaSala extends Scene {
         const solo = sala.jugadores.length === 1;
 
         this.titulo.setText(`SALA ${sala.codigo}`);
+        const configuracion = sala.configuracion;
         this.modo.setText(solo
             ? 'TU CONTRA LA IA · ELIGE TU ROL'
-            : 'MULTIJUGADOR · ROLES AL AZAR EN CADA NIVEL');
+            : configuracion.bandosFijos
+                ? 'MULTIJUGADOR · ROLES AL AZAR SOLO AL EMPEZAR'
+                : 'MULTIJUGADOR · ROLES AL AZAR EN CADA NIVEL');
         this.cabeceraJugadores.setText(`JUGADORES ${sala.jugadores.length}/${sala.capacidadHumanos}`);
 
         this.plazas.forEach((plaza, i) => this.mostrarPlaza(plaza, sala.jugadores[i]));
 
-        const configuracion = sala.configuracion;
         this.selectorDificultad?.setValor(configuracion.idDificultad).setEditable(editable);
         this.selectorVidas?.setValor(configuracion.vidas).setEditable(editable);
         this.selectorChoque?.setValor(configuracion.colisionEntrePacMan).setEditable(editable);
         this.selectorCajas?.setValor(configuracion.frecuenciaCajas).setEditable(editable);
+        this.selectorBandos?.setValor(configuracion.bandosFijos).setEditable(editable);
+        this.selectorModo?.setValor(configuracion.modoClasico).setEditable(editable);
+        this.selectorReaparicion
+            ?.setValor(configuracion.segundosReaparicionFantasmas)
+            .setEditable(editable);
 
         const yo = sala.jugadores.find((jugador) => jugador.idUsuario === this.idUsuario);
         this.selectorRol
@@ -333,10 +369,35 @@ export class EscenaSala extends Scene {
             .setValor(this.codigoRol(yo?.rolPreferido ?? null))
             .setEditable(enLobby);
 
+        this.acomodarOpciones(solo, configuracion.modoClasico);
+
         this.notaConfiguracion.setText(soyAnfitrion ? '' : 'SOLO EL ANFITRION LA CAMBIA');
 
         this.botonIniciar.setVisible(soyAnfitrion).setHabilitado(sala.puedeIniciar);
         this.espera.setVisible(!soyAnfitrion && enLobby);
+    }
+
+    // Una fila por opción visible, sin huecos de las que no aplican
+    private acomodarOpciones(solo: boolean, modoClasico: boolean): void {
+        const filas: [GameObjects.Container | null, boolean][] = [
+            [this.selectorDificultad, true],
+            [this.selectorVidas, true],
+            [this.selectorChoque, true],
+            [this.selectorCajas, true],
+            [this.selectorBandos, !solo],
+            [this.selectorModo, true],
+            [this.selectorReaparicion, modoClasico],
+            [this.selectorRol, solo],
+        ];
+        let y = PRIMERA_OPCION_Y;
+
+        for (const [selector, visible] of filas) {
+            selector?.setVisible(visible).setY(y);
+
+            if (visible) {
+                y += ALTO_OPCION;
+            }
+        }
     }
 
     private mostrarPlaza(plaza: Plaza, jugador: JugadorSalaDto | undefined): void {

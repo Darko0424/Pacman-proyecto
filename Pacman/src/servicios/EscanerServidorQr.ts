@@ -4,7 +4,7 @@ import {
     BarcodeScanner,
 } from '@capacitor-mlkit/barcode-scanning';
 import type { PluginListenerHandle } from '@capacitor/core';
-import { normalizarUrlApi, PUERTO_API } from './Configuracion';
+import { normalizarUrlApi } from './Configuracion';
 
 // El QR de emparejamiento tiene un esquema propio para no confundirlo con
 // cualquier dirección web que aparezca delante de la cámara.
@@ -23,14 +23,13 @@ export function leerUrlServidorQr(contenido: string): string | null {
             return null;
         }
 
+        // Solo el túnel tiene QR; la IP de la red local se escribe a mano
         const direccion = new URL(urlApi);
-        const esServidorLocal = direccion.protocol === 'http:' &&
-            direccion.port === String(PUERTO_API);
         const esTunelDeVisualStudio = direccion.protocol === 'https:' &&
             direccion.hostname.endsWith('.devtunnels.ms') &&
             !direccion.port;
 
-        return esServidorLocal || esTunelDeVisualStudio ? urlApi : null;
+        return esTunelDeVisualStudio ? urlApi : null;
     } catch {
         return null;
     }

@@ -3,10 +3,17 @@ import { Bando, EstadoSala, FrecuenciaCajas, ModoPartida } from './enums';
 // Opciones del menú de la sala (ConfiguracionSalaDto). Solo las cambia el anfitrión.
 export interface ConfiguracionSalaDto {
     idDificultad: number;
-    // Entre 1 y 5; las tienen Pac-Man y fantasmas, y se reinician en cada nivel
+    // Entre 1 y 5; las tienen Pac-Man y fantasmas (en el modo clásico solo
+    // Pac-Man), y se reinician en cada nivel
     vidas: number;
     colisionEntrePacMan: boolean;
     frecuenciaCajas: FrecuenciaCajas;
+    // Multijugador: los roles se sortean solo en el primer nivel
+    bandosFijos: boolean;
+    // Fantasmas sin límite de vidas; solo se gana comiéndose todas las bolas
+    modoClasico: boolean;
+    // 30, 20, 10 o 5; solo cuenta en el modo clásico
+    segundosReaparicionFantasmas: number;
 }
 
 export interface JugadorSalaDto {

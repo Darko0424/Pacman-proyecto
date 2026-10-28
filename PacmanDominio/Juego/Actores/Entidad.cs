@@ -20,6 +20,10 @@ public abstract class Entidad
     public double Avance { get; private set; }
 
     public int VidasRestantes { get; private set; }
+
+    // Modo clásico: los fantasmas pierden vidas sin gastarlas y siempre reaparecen
+    public bool VidasInfinitas { get; }
+
     public bool ReaparicionPendiente { get; private set; }
 
     // Vencimiento relativo al tiempo de simulación, no al reloj del sistema.
@@ -68,7 +72,8 @@ public abstract class Entidad
         }
     }
 
-    protected Entidad(byte idPersonaje, int? idUsuario, Casilla posicionInicial, int vidas)
+    protected Entidad(
+        byte idPersonaje, int? idUsuario, Casilla posicionInicial, int vidas, bool vidasInfinitas = false)
     {
         ArgumentOutOfRangeException.ThrowIfZero(idPersonaje);
         ArgumentNullException.ThrowIfNull(posicionInicial);
@@ -94,6 +99,7 @@ public abstract class Entidad
         IdUsuario = idUsuario;
         Posicion = posicionInicial;
         VidasRestantes = vidas;
+        VidasInfinitas = vidasInfinitas;
         ControlIa = idUsuario == null;
     }
 
@@ -132,7 +138,11 @@ public abstract class Entidad
             return false;
         }
 
-        VidasRestantes--;
+        if (!VidasInfinitas)
+        {
+            VidasRestantes--;
+        }
+
         ReaparicionPendiente = VidasRestantes > 0;
         InvencibleHasta = TimeSpan.Zero;
         CongeladoHasta = TimeSpan.Zero;

@@ -295,6 +295,7 @@ public sealed class Sala
     }
 
     // Tras la transición: el siguiente nivel, con los roles sorteados de nuevo
+    // salvo que la configuración tenga bandos fijos
     public bool IniciarSiguienteNivel(EstadoPartida siguienteNivel)
     {
         ArgumentNullException.ThrowIfNull(siguienteNivel);
@@ -309,6 +310,13 @@ public sealed class Sala
 
         if (Modo == ModoPartida.ContraIa &&
             siguienteNivel.ObtenerActorDeUsuario(_jugadores[0].IdUsuario)!.Bando != RolContraIa)
+        {
+            return false;
+        }
+
+        if (Modo == ModoPartida.Multijugador && Configuracion.BandosFijos &&
+            _jugadores.Any(jugador =>
+                siguienteNivel.ObtenerActorDeUsuario(jugador.IdUsuario)!.IdPersonaje != jugador.IdPersonaje))
         {
             return false;
         }

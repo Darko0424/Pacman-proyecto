@@ -30,6 +30,11 @@ interface FilaJugador {
     datos: GameObjects.Text;
 }
 
+// La fuente pixelada no tiene el símbolo de infinito
+function textoVidas(actor: { vidasRestantes: number; vidasInfinitas: boolean }): string {
+    return actor.vidasInfinitas ? 'INF' : `x${actor.vidasRestantes}`;
+}
+
 export interface Zona {
     x: number;
     y: number;
@@ -162,7 +167,7 @@ export class HUD {
             ponerColor(this.rol.setText(esPacMan ? 'ERES PAC-MAN' : 'ERES FANTASMA'),
                 COLOR_PERSONAJE[mio.actor.idPersonaje] ?? COLOR.BLANCO);
             this.puntaje.setText(String(mio.actor.puntuacion));
-            this.vidas.setText(`VIDAS x${mio.actor.vidasRestantes}`);
+            this.vidas.setText(`VIDAS ${textoVidas(mio.actor)}`);
         } else {
             ponerColor(this.rol.setText('ESPECTADOR'), COLOR.GRIS);
         }
@@ -186,7 +191,7 @@ export class HUD {
             fila.marca.dibujar(actor.eliminado ? null : color, color, 2);
             ponerColor(fila.nombre.setText(nombreActor(actor).slice(0, this.largoNombre)),
                 actor.eliminado ? COLOR.GRIS : esMio ? COLOR.PACMAN : COLOR.BLANCO);
-            fila.datos.setText(`x${actor.vidasRestantes} ${String(actor.puntuacion).padStart(5, ' ')}`);
+            fila.datos.setText(`${textoVidas(actor)} ${String(actor.puntuacion).padStart(5, ' ')}`);
         });
 
         this.bolas.setText(`BOLAS RESTANTES ${estado.bolasRestantes}`);

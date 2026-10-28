@@ -34,8 +34,9 @@ export function guardarUrlApi(url: string | null): void {
     }
 }
 
-// Acepta lo que escribe el jugador: "192.168.1.5", "192.168.1.5:5253" o una
-// URL completa. Devuelve el origen (http://host:puerto) o null si no es válida.
+// Acepta lo que escribe el jugador: "192.168.1.5", "192.168.1.5:5253", la
+// dirección de un túnel de Visual Studio (con o sin https://) o una URL completa.
+// Devuelve el origen (http://host:puerto) o null si no es válida.
 export function normalizarUrlApi(texto: string): string | null {
     const limpio = texto.trim().replace(/\/+$/, '');
 
@@ -43,7 +44,9 @@ export function normalizarUrlApi(texto: string): string | null {
         return null;
     }
 
-    const conEsquema = /^[a-z][a-z0-9+.-]*:\/\//i.test(limpio) ? limpio : `http://${limpio}`;
+    // Los túneles solo responden por https
+    const esquema = /\.devtunnels\.ms$/i.test(limpio) ? 'https' : 'http';
+    const conEsquema = /^[a-z][a-z0-9+.-]*:\/\//i.test(limpio) ? limpio : `${esquema}://${limpio}`;
 
     try {
         const url = new URL(conEsquema);

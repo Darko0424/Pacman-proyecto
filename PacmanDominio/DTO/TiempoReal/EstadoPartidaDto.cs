@@ -77,6 +77,7 @@ public sealed class EstadoPartidaDto
                     Direccion = pacman.Direccion,
                     Avance = pacman.Avance,
                     VidasRestantes = pacman.VidasRestantes,
+                    VidasInfinitas = pacman.VidasInfinitas,
                     Eliminado = pacman.Eliminado,
                     ReaparicionPendiente = pacman.ReaparicionPendiente,
                     EsInvencible = pacman.EsInvencible(tiempo),
@@ -99,6 +100,7 @@ public sealed class EstadoPartidaDto
                     Direccion = fantasma.Direccion,
                     Avance = fantasma.Avance,
                     VidasRestantes = fantasma.VidasRestantes,
+                    VidasInfinitas = fantasma.VidasInfinitas,
                     Eliminado = fantasma.Eliminado,
                     ReaparicionPendiente = fantasma.ReaparicionPendiente,
                     EsInvencible = fantasma.EsInvencible(tiempo),
@@ -182,6 +184,7 @@ public sealed class PacManDto
     public Direccion Direccion { get; init; }
     public double Avance { get; init; }
     public int VidasRestantes { get; init; }
+    public bool VidasInfinitas { get; init; }
     public bool Eliminado { get; init; }
     public bool ReaparicionPendiente { get; init; }
     public bool EsInvencible { get; init; }
@@ -204,6 +207,7 @@ public sealed class FantasmaDto
     public Direccion Direccion { get; init; }
     public double Avance { get; init; }
     public int VidasRestantes { get; init; }
+    public bool VidasInfinitas { get; init; }
     public bool Eliminado { get; init; }
     public bool ReaparicionPendiente { get; init; }
     public bool EsInvencible { get; init; }
